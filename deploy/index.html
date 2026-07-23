@@ -1087,8 +1087,23 @@
     }
 
     .modal-backdrop {
-      background: rgba(28, 35, 31, 0.42);
+      background: rgba(28, 35, 31, 0.52);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .modal-backdrop::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      -webkit-backdrop-filter: blur(5px);
       backdrop-filter: blur(5px);
+    }
+
+    .modal-backdrop > .modal {
+      position: relative;
+      z-index: 1;
     }
 
     .modal {
@@ -1112,6 +1127,911 @@
       background: #f8faf9;
     }
 
+    .counter-shortcuts {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .counter-shortcut,
+    .counter-manage-button {
+      min-width: 0;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 11px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(35, 48, 41, 0.06);
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .counter-shortcut:hover,
+    .counter-shortcut:focus-visible,
+    .counter-manage-button:hover,
+    .counter-manage-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--counter-color, var(--accent));
+      background: #f8fbfa;
+      outline: 3px solid color-mix(in srgb, var(--counter-color, var(--accent)) 16%, transparent);
+    }
+
+    .counter-shortcut:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .counter-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--counter-color, var(--accent));
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--counter-color, var(--accent)) 13%, transparent);
+    }
+
+    .counter-shortcut-label {
+      min-width: 0;
+      display: grid;
+      gap: 1px;
+      text-align: left;
+      line-height: 1.05;
+    }
+
+    .counter-shortcut-label strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .counter-shortcut-label small {
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 10px;
+    }
+
+    .counter-manage-button {
+      width: 42px;
+      padding: 0;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .counter-manage-button svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .counter-modal {
+      width: min(920px, 100%);
+      max-height: min(88vh, 860px);
+      display: flex;
+      flex-direction: column;
+      color: #27312c;
+    }
+
+    .counter-modal .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .counter-head-actions,
+    .counter-toolbar,
+    .counter-segment,
+    .counter-range,
+    .counter-legend,
+    .counter-summary-name,
+    .counter-record-name,
+    .counter-filter-label,
+    .counter-filter-actions,
+    .counter-item-actions,
+    .counter-form-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .counter-head-actions {
+      gap: 8px;
+    }
+
+    .counter-primary,
+    .counter-secondary,
+    .counter-danger {
+      min-height: 38px;
+      border-radius: 10px;
+      padding: 0 13px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .counter-primary {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .counter-secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .counter-danger {
+      border: 1px solid rgba(155, 44, 32, 0.25);
+      background: #fff8f6;
+      color: #9b2c20;
+    }
+
+    .counter-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 16px 18px 20px;
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .counter-sidebar,
+    .counter-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .counter-sidebar {
+      align-self: start;
+      padding: 14px;
+    }
+
+    .counter-sidebar-title {
+      margin-bottom: 10px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .counter-filter-actions {
+      justify-content: space-between;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+      color: #4b5851;
+      font-size: 13px;
+      font-weight: 560;
+    }
+
+    .counter-filter-actions button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .counter-filter-row {
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: 18px 9px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid rgba(220, 226, 222, 0.7);
+      font-size: 14px;
+    }
+
+    .counter-filter-row:last-of-type {
+      border-bottom: 0;
+    }
+
+    .counter-check {
+      width: 17px;
+      height: 17px;
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      background: #fff;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .counter-check.checked {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .counter-filter-dot,
+    .counter-record-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--counter-color, var(--accent));
+    }
+
+    .counter-filter-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 620;
+    }
+
+    .counter-unit-pill {
+      color: #455149;
+      background: rgba(69, 81, 73, 0.12);
+      border-radius: 999px;
+      padding: 3px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .counter-item-actions {
+      gap: 3px;
+      grid-column: 3 / 5;
+      justify-content: flex-end;
+      padding-bottom: 5px;
+    }
+
+    .counter-item-actions button {
+      border: 0;
+      background: transparent;
+      color: #435049;
+      padding: 3px 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .counter-main {
+      min-width: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .counter-toolbar {
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .counter-segment {
+      gap: 2px;
+      padding: 3px;
+      border-radius: 9px;
+      background: #edf1ee;
+    }
+
+    .counter-segment button {
+      min-width: 40px;
+      min-height: 30px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #53605a;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 560;
+    }
+
+    .counter-segment button.active {
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(35, 48, 41, 0.09);
+      font-weight: 720;
+    }
+
+    .counter-range {
+      gap: 7px;
+      color: #445149;
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .counter-range button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .counter-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .counter-summary {
+      min-width: 0;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fff;
+    }
+
+    .counter-summary-name {
+      gap: 7px;
+      color: #4a5750;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .counter-summary-value {
+      margin-top: 6px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .counter-summary-sub {
+      margin-top: 3px;
+      color: #53605a;
+      font-size: 12px;
+      font-weight: 520;
+    }
+
+    .counter-panel {
+      padding: 14px;
+    }
+
+    .counter-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .counter-panel-head h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 16px;
+      font-weight: 780;
+    }
+
+    .counter-panel-head p {
+      margin: 3px 0 0;
+      color: #53605a;
+      font-size: 12px;
+      font-weight: 520;
+      line-height: 1.45;
+    }
+
+    .counter-legend {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      color: #4e5b54;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .counter-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .counter-chart {
+      height: 210px;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+    }
+
+    .counter-y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0 7px 19px 0;
+      color: #53605a;
+      font-size: 11px;
+      font-weight: 560;
+      text-align: right;
+    }
+
+    .counter-plot {
+      position: relative;
+      margin-bottom: 19px;
+      border-left: 1px solid #e6ece8;
+      border-bottom: 1px solid #e6ece8;
+    }
+
+    .counter-gridline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #eef2ef;
+    }
+
+    .counter-bars {
+      position: absolute;
+      inset: 0 6px;
+      display: grid;
+      grid-template-columns: repeat(var(--bucket-count), minmax(0, 1fr));
+      align-items: end;
+      gap: 6px;
+    }
+
+    .counter-bar-group {
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .counter-bar {
+      width: min(16px, 38%);
+      min-height: 2px;
+      border-radius: 5px 5px 2px 2px;
+      background: var(--counter-color, var(--accent));
+    }
+
+    .counter-bar-label {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -18px;
+      overflow: hidden;
+      color: #53605a;
+      font-size: 11px;
+      font-weight: 560;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .counter-records {
+      display: grid;
+      gap: 0;
+    }
+
+    .counter-record-row {
+      min-height: 44px;
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid rgba(220, 226, 222, 0.72);
+      font-size: 13px;
+    }
+
+    .counter-record-time {
+      color: #53605a;
+      font-variant-numeric: tabular-nums;
+      font-weight: 520;
+    }
+
+    .counter-record-name {
+      min-width: 0;
+      gap: 7px;
+      font-weight: 680;
+    }
+
+    .counter-record-value {
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .counter-record-delete {
+      border: 0;
+      background: transparent;
+      color: #8b4139;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .counter-empty {
+      padding: 24px 10px;
+      color: #53605a;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 520;
+    }
+
+    .counter-item-modal {
+      width: min(560px, 100%);
+    }
+
+    .counter-form {
+      padding: 18px 20px 20px;
+      display: grid;
+      gap: 14px;
+      line-height: 1.45;
+    }
+
+    .counter-form label,
+    .counter-form legend {
+      display: block;
+      margin-bottom: 7px;
+      color: #59645e;
+      font-size: 13px;
+      font-weight: 520;
+      line-height: 1.4;
+    }
+
+    .counter-form input,
+    .counter-form select {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0 11px;
+      color: var(--text);
+    }
+
+    .counter-form input:focus,
+    .counter-form select:focus {
+      border-color: var(--accent);
+      outline: 3px solid rgba(37, 109, 133, 0.14);
+    }
+
+    .counter-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .counter-kind-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .counter-kind {
+      min-height: 62px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      text-align: left;
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    .counter-kind strong,
+    .counter-kind small {
+      display: block;
+    }
+
+    .counter-kind strong {
+      font-size: 13px;
+      font-weight: 720;
+      line-height: 1.35;
+    }
+
+    .counter-kind small {
+      margin-top: 3px;
+      color: #5b6660;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .counter-kind.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(37, 109, 133, 0.11);
+    }
+
+    .counter-color-row {
+      display: flex;
+      gap: 9px;
+    }
+
+    .counter-color-option {
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.13);
+    }
+
+    .counter-color-option.active {
+      box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent);
+    }
+
+    .counter-switch-row {
+      min-height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .counter-switch-row small {
+      display: block;
+      margin-top: 2px;
+      color: #5b6660;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .counter-switch {
+      width: 40px;
+      height: 23px;
+      border: 0;
+      border-radius: 999px;
+      background: #c8d0cb;
+      padding: 3px;
+      cursor: pointer;
+      text-align: right;
+    }
+
+    .counter-switch::after {
+      content: "";
+      display: inline-block;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(35, 48, 41, 0.22);
+    }
+
+    .counter-switch.active {
+      background: var(--accent);
+    }
+
+    .counter-switch:not(.active) {
+      text-align: left;
+    }
+
+    .counter-form-actions {
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .counter-record-modal {
+      width: min(620px, 100%);
+    }
+
+    .counter-calendar-body {
+      padding: 18px 20px 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .counter-calendar-body label {
+      display: block;
+      margin-bottom: 7px;
+      color: #59645e;
+      font-size: 13px;
+      font-weight: 560;
+    }
+
+    .counter-record-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .counter-record-tab {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 13px;
+      color: #34413a;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 680;
+      line-height: 1.25;
+      transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    .counter-record-tab:hover,
+    .counter-record-tab:focus-visible {
+      border-color: var(--counter-color, var(--accent));
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--counter-color, var(--accent)) 14%, transparent);
+    }
+
+    .counter-record-tab.active {
+      border-color: var(--counter-color, var(--accent));
+      background: color-mix(in srgb, var(--counter-color, var(--accent)) 14%, white);
+      color: color-mix(in srgb, var(--counter-color, var(--accent)) 82%, #17201b);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--counter-color, var(--accent)) 22%, transparent);
+    }
+
+    .counter-calendar-summary {
+      min-height: 38px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: #36545e;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .counter-calendar-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .counter-calendar-toolbar strong {
+      font-size: 16px;
+      font-weight: 780;
+    }
+
+    .counter-calendar-toolbar button {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .counter-calendar-toolbar button:disabled {
+      cursor: default;
+      opacity: 0.35;
+    }
+
+    .counter-calendar-weekdays,
+    .counter-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .counter-calendar-weekdays span {
+      color: #53605a;
+      font-size: 12px;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .counter-calendar-day,
+    .counter-calendar-blank {
+      min-height: 68px;
+      border-radius: 10px;
+    }
+
+    .counter-calendar-day {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      display: grid;
+      align-content: center;
+      gap: 4px;
+      padding: 7px 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+    }
+
+    .counter-calendar-day:hover,
+    .counter-calendar-day:focus-visible {
+      border-color: var(--accent);
+      background: #f1f8f9;
+      outline: 3px solid rgba(37, 109, 133, 0.13);
+    }
+
+    .counter-calendar-day:active {
+      transform: scale(0.97);
+    }
+
+    .counter-calendar-day.today {
+      box-shadow: inset 0 0 0 2px rgba(37, 109, 133, 0.28);
+    }
+
+    .counter-calendar-day.has-records {
+      border-color: rgba(47, 125, 79, 0.72);
+      background: #dcefe2;
+    }
+
+    .counter-calendar-day:disabled {
+      cursor: default;
+      border-color: #e8ece9;
+      background: #f5f7f6;
+      color: #a0aaa4;
+      outline: none;
+      transform: none;
+    }
+
+    .counter-calendar-date {
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .counter-calendar-total {
+      min-height: 16px;
+      color: #22613c;
+      font-size: 10px;
+      font-weight: 750;
+      line-height: 1.25;
+    }
+
+    .counter-calendar-day:disabled .counter-calendar-total {
+      color: #9ba59f;
+    }
+
+    .counter-calendar-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .counter-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      z-index: 80;
+      min-width: min(360px, calc(100vw - 32px));
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: #2d2924;
+      color: #fff;
+      box-shadow: 0 16px 40px rgba(36, 31, 26, 0.27);
+      font-size: 12px;
+    }
+
+    .counter-toast.open {
+      display: flex;
+    }
+
+    .counter-toast-check {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #4b9468;
+      font-weight: 800;
+    }
+
+    .counter-toast-message {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .counter-toast-undo {
+      border: 0;
+      background: transparent;
+      color: #8fd0e2;
+      cursor: pointer;
+      font-weight: 760;
+    }
+
     .new-input,
     .date-select,
     .restore-button,
@@ -1129,6 +2049,72 @@
         top: 0;
         padding: 10px 0 12px;
         border-radius: 0;
+      }
+
+      .counter-shortcuts {
+        gap: 4px;
+      }
+
+      .counter-shortcut {
+        width: 38px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .counter-shortcut-label {
+        display: none;
+      }
+
+      .counter-body {
+        grid-template-columns: 1fr;
+      }
+
+      .counter-sidebar {
+        display: none;
+      }
+
+      .counter-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .counter-range {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .counter-summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .counter-kind-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .counter-record-modal {
+        width: min(100%, 620px);
+      }
+
+      .counter-calendar-body {
+        padding: 14px;
+      }
+
+      .counter-calendar-weekdays,
+      .counter-calendar-grid {
+        gap: 4px;
+      }
+
+      .counter-calendar-day,
+      .counter-calendar-blank {
+        min-height: 58px;
+      }
+
+      .counter-calendar-date {
+        font-size: 12px;
+      }
+
+      .counter-calendar-total {
+        font-size: 9px;
       }
 
       h1 {
@@ -1171,6 +2157,7 @@
         <h1>Todo</h1>
         <div class="date-stamp" id="todayLabel"></div>
       </div>
+      <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录"></div>
       <div class="topbar-actions">
         <button class="help-button" id="openHelp" type="button" title="使用说明" aria-label="打开使用说明">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -1280,12 +2267,86 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" id="counterBackdrop" role="dialog" aria-modal="true" aria-labelledby="counterTitle">
+    <section class="modal counter-modal">
+      <div class="modal-head">
+        <div class="modal-title" id="counterTitle">累计</div>
+        <div class="counter-head-actions">
+          <button class="counter-secondary" id="openCounterRecord" type="button">补记</button>
+          <button class="counter-primary" id="openCounterItem" type="button">＋ 新建记录项</button>
+          <button class="icon-button" id="closeCounter" type="button" title="关闭累计">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M6 6l12 12"></path>
+              <path d="M18 6L6 18"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="counter-body">
+        <aside class="counter-sidebar" id="counterFilters" aria-label="累计记录项筛选"></aside>
+        <div class="counter-main">
+          <div class="counter-panel counter-toolbar">
+            <div class="counter-segment" id="counterPeriods" role="tablist" aria-label="统计周期">
+              <button type="button" data-period="day">日</button>
+              <button type="button" data-period="week" class="active">周</button>
+              <button type="button" data-period="month">月</button>
+              <button type="button" data-period="year">年</button>
+            </div>
+            <div class="counter-range"><button id="counterPrev" type="button" aria-label="上一段时间">‹</button><strong id="counterRangeLabel"></strong><button id="counterNext" type="button" aria-label="下一段时间">›</button></div>
+          </div>
+          <div class="counter-summary-grid" id="counterSummary"></div>
+          <div id="counterCharts"></div>
+          <section class="counter-panel"><div class="counter-panel-head"><div><h3>最近记录</h3><p>点击删除可以撤销一条历史记录</p></div></div><div class="counter-records" id="counterRecords"></div></section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="counterItemBackdrop" role="dialog" aria-modal="true" aria-labelledby="counterItemTitle">
+    <section class="modal counter-item-modal">
+      <div class="modal-head"><div class="modal-title" id="counterItemTitle">新建记录项</div><button class="icon-button" id="closeCounterItem" type="button" title="关闭记录项编辑">×</button></div>
+      <form class="counter-form" id="counterItemForm">
+        <input id="counterItemId" type="hidden">
+        <div><label for="counterItemName">名称</label><input id="counterItemName" maxlength="80" autocomplete="off" placeholder="例如：游泳"></div>
+        <div><label>记录方式</label><div class="counter-kind-grid" id="counterKinds">
+          <button class="counter-kind active" type="button" data-kind="count"><strong>次数</strong><small>俯卧撑、喝水</small></button>
+          <button class="counter-kind" type="button" data-kind="duration"><strong>时长</strong><small>游泳、学习</small></button>
+          <button class="counter-kind" type="button" data-kind="custom"><strong>自定义</strong><small>页、杯、组…</small></button>
+        </div></div>
+        <div class="counter-form-grid"><div><label for="counterItemIncrement">每次点击增加</label><input id="counterItemIncrement" type="number" min="0.001" step="0.001" value="1"></div><div><label for="counterItemUnit">单位</label><input id="counterItemUnit" maxlength="12" value="次"></div></div>
+        <div class="counter-switch-row"><span><b>固定在首页顶部</b><small>首页最多显示 3 个，之后仍可在累计页面管理</small></span><button class="counter-switch active" id="counterItemPinned" type="button" aria-pressed="true"></button></div>
+        <div><label>识别颜色</label><input id="counterItemColor" type="hidden" value="#256d85"><div class="counter-color-row" id="counterColors"><button class="counter-color-option active" type="button" data-color="#256d85" style="background:#256d85"></button><button class="counter-color-option" type="button" data-color="#b5672e" style="background:#b5672e"></button><button class="counter-color-option" type="button" data-color="#7562a8" style="background:#7562a8"></button><button class="counter-color-option" type="button" data-color="#2f7d4f" style="background:#2f7d4f"></button><button class="counter-color-option" type="button" data-color="#a04f58" style="background:#a04f58"></button></div></div>
+        <div class="counter-form-actions"><button class="counter-secondary" id="cancelCounterItem" type="button">取消</button><button class="counter-primary" type="submit">保存</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="counterRecordBackdrop" role="dialog" aria-modal="true" aria-labelledby="counterRecordTitle">
+    <section class="modal counter-record-modal">
+      <div class="modal-head"><div class="modal-title" id="counterRecordTitle">补记</div><button class="icon-button" id="closeCounterRecord" type="button" title="关闭补记">×</button></div>
+      <div class="counter-calendar-body">
+        <div><label id="counterRecordTabsLabel">记录项</label><div class="counter-record-tabs" id="counterRecordTabs" role="tablist" aria-labelledby="counterRecordTabsLabel"></div></div>
+        <div class="counter-calendar-summary" id="counterCalendarSummary"></div>
+        <div class="counter-calendar-toolbar"><button id="counterCalendarPrev" type="button" aria-label="上一个月">‹</button><strong id="counterCalendarMonthLabel"></strong><button id="counterCalendarNext" type="button" aria-label="下一个月">›</button></div>
+        <div class="counter-calendar-weekdays" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+        <div class="counter-calendar-grid" id="counterCalendarGrid"></div>
+        <div class="counter-calendar-footer"><button class="counter-primary" id="cancelCounterRecord" type="button">完成</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="counter-toast" id="counterToast" role="status" aria-live="polite"><span class="counter-toast-check">✓</span><span class="counter-toast-message" id="counterToastMessage"></span><button class="counter-toast-undo" id="counterToastUndo" type="button">撤销</button></div>
+
   <script>
-    const API_BASE = "https://todo-codex.cai975301994.workers.dev";
+    const API_BASE = location.protocol === "file:"
+      ? "https://todo.choi975.workers.dev"
+      : location.origin;
     const API_TOKEN = "";
     const DAY_COUNT = 31;
     const SHOPPING_GROUP = "__shopping__";
     const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+    const COUNTER_KINDS = ["count", "duration", "custom"];
+    const COUNTER_COLORS = ["#256d85", "#b5672e", "#7562a8", "#2f7d4f", "#a04f58"];
     const HELP_MANUAL = [
       {
         title: "主界面",
@@ -1299,7 +2360,10 @@
       {
         title: "新增任务",
         items: [
-          "右上角加号或 Alt+N 打开新建窗口，输入内容后可选择每天、购物清单或具体日期。",
+          "右上角加号或 Alt+N 打开新建窗口，输入内容后可选择每天、累计、购物清单或具体日期。",
+          "文本以“每日：”或“每天：”开头时会忽略下拉选择，自动去掉前缀并创建每日任务；以“累计：”开头时会自动创建每次增加 1 次的累计记录项。中英文冒号都支持。",
+          "普通任务以“周六”“下周日”等周几开头时，会自动安排到对应日期并删除周几文字；以“7月20日”或“7月21号”等月日开头时，也会自动安排日期，但保留完整任务文字。",
+          "以“明天”“后天”“三天后”或“4天后”等相对日期开头时，会自动安排到对应日期，并删除开头的时间文字。",
           "文本最长 240 个字符，系统会自动去掉首尾空格并合并多余空白。",
           "选择“每天”会生成一条每日任务，文本会永久写入“（每日任务）”前缀，并在当前 31 天范围里每天生成一条对应待办；选择普通日期则只创建一次。",
           "每日任务右侧会显示完成次数和百分比，点击统计数字可以打开补打卡日历。"
@@ -1320,6 +2384,15 @@
           "已完成只统计和显示普通任务，不包含每日任务打卡；每日任务的历史补签和取消打卡仍在每日任务的补打卡日历里处理。",
           "点击顶部已完成按钮会打开历史窗口，顶部显示普通任务总完成数，列表显示最近 100 条普通已完成任务。",
           "每条历史记录会显示任务文本、原位置和完成时间；点击恢复会把它改回未完成并放回今天，文本以“买”开头时仍会按购物清单规则归入购物清单。"
+        ],
+      },
+      {
+        title: "累计记录",
+        items: [
+          "顶部最多显示 3 个已固定的记录项，单击会按预设值增加一次；Alt+1、Alt+2、Alt+3 可以记录对应的快捷项。",
+          "柱状图按钮打开“累计”窗口，可以按日、周、月、年查看数据，并勾选只显示部分记录项。每个记录项使用一张独立图表，不会与其他项目混在一起。",
+          "累计窗口支持新建、编辑和删除记录项；删除后记录项不再显示，但历史记录仍然保留。",
+          "点击后的底部提示可以立即撤销；打开“补记”后选择记录项，直接点击日历日期即可按预设值增加一条记录，同一天可以重复点击。新建窗口也可以切换到“累计记录项”直接创建。"
         ],
       },
       {
@@ -1357,12 +2430,13 @@
       "- 整体是克制、安静、偏纸张质感的暖米色界面，不要做营销页。",
       "- 页面主体宽度约 920px，顶部是 sticky top bar。",
       "- 左上显示标题 Todo 和今天的中文日期。",
-      "- 右上有三个 46x46 的方形按钮：问号帮助按钮、已完成按钮、加号新建按钮。",
+      "- 标题与右上按钮之间显示最多 3 个累计快捷记录项，并有一个柱状图按钮进入累计统计；右上仍有帮助、已完成和新建按钮。",
+      "- 累计统计中的每个记录项都使用独立柱状图，即使单位相同也不合并展示。",
       "- 已完成按钮使用对勾圆圈或回转完成图标，完成总数显示在已完成弹窗顶部，不在按钮上显示数字徽标。",
       "- 主体内容是分组列表：最上方固定“购物清单”，下面是今天到未来 30 天。",
       "- 每个分组都是可折叠面板，标题显示中文日期名称和任务数量。",
       "- 待办行左侧是复选框，中间是文本，右侧悬浮按钮为置顶和置底。",
-      "- 新建弹窗包含：每日任务列表、文本输入框、日期下拉、创建按钮。",
+      "- 新建弹窗包含：每日任务列表、文本输入框、分类下拉、创建按钮；分类下拉包含每天、累计、购物清单和日期。",
       "- 每个每日任务右侧显示打卡计数和百分比，例如 20/21   95.24%，点击后打开补打卡日历。",
       "- 已完成弹窗标题为“已完成”，顶部显示普通任务已完成总数，列表显示最近 100 条普通已完成任务，每条包含文本、原位置、完成时间、恢复按钮。",
       "- 还要有一个帮助弹窗，默认显示使用说明，头部有“Prompt版 / 说明版”切换按钮，Prompt 版显示可直接复制给 AI 的提示词。",
@@ -1386,7 +2460,10 @@
       "4. 业务规则",
       "- 视图范围固定为今天加未来 30 天，总共 31 天。",
       "- 日期标题依次使用：今天、明天、后天、星期X（YYYY年M月D日）。",
-      "- 新建日期下拉包含：每天、购物清单、今天到 30 天后。",
+      "- 新建分类下拉包含：每天、累计、购物清单、今天到 30 天后。",
+      "- 新建文本以“每日：”或“每天：”开头时自动创建每日任务并去掉前缀；以“累计：”开头时自动创建默认单位为“次”、每次增加 1 的累计记录项；支持中英文冒号。自动前缀规则优先于下拉选择。",
+      "- 普通任务以“周X”或“下周X”开头时自动识别到对应日期，并从任务文本中删除时间前缀；以“X月X日”或“X月X号”开头时自动识别日期，但任务文本保持不变。",
+      "- 普通任务以“明天”“后天”或“X天后”开头时自动识别相对日期，并删除时间前缀；X 支持阿拉伯数字和一至九十九的中文数字。",
       "- 选择“每天”时，创建一条 daily task，并在当前 31 天范围内为每天生成一条待办实例。",
       "- 每日任务文本必须永久写入“（每日任务）”前缀；已有 daily task 和未完成实例也要自动迁移补前缀。",
       "- 每日任务要有 startDate；现有任务从 2026-07-08 开始统计，新任务从创建当天开始统计。",
@@ -1421,11 +2498,16 @@
       "- POST /api/todos/move body: { id, direction, today }。",
       "- POST /api/daily-tasks/placement body: { id, placement }。",
       "- POST /api/daily-tasks/checkin body: { id, date, checked, today }。",
+      "- GET /api/counters?today=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD 返回 { items, records }。",
+      "- POST /api/counter-items、/api/counter-items/update、/api/counter-items/archive 管理累计记录项。",
+      "- POST /api/counter-records 创建独立记录；POST /api/counter-records/delete 删除或撤销记录。",
       "- 出错时返回 { error }，前端把错误展示到状态栏。",
       "",
       "6. 数据字段",
       "- todo: id, text, dueDate, sortOrder, sourceDailyTaskId, createdAt, manualSort, completedAt。",
       "- dailyTask: id, text, sortOrder, placement, startDate, completedCount, totalCount, completionPercent, checkins, createdAt。",
+      "- counterItem: id, name, kind, unit, incrementValue, color, pinned, sortOrder, active。",
+      "- counterRecord: id, itemId, amount, recordedDate, recordedAt, createdAt。",
       "",
       "请直接输出完整实现代码，默认中文界面，交互细节严格按以上规则落地。"
     ].join("\n");
@@ -1436,6 +2518,19 @@
       dailyTasks: [],
       completedTodos: [],
       completedCount: 0,
+      counterItems: [],
+      counterRecords: [],
+      counterSelectedIds: [],
+      counterPeriod: "week",
+      counterCursor: toLocalDateString(new Date()),
+      counterItemKind: "count",
+      counterItemPinned: true,
+      counterCalendarItemId: null,
+      counterCalendarMonth: toLocalDateString(new Date()).slice(0, 7) + "-01",
+      counterCalendarRecords: [],
+      counterCalendarLoading: false,
+      counterToastRecordId: null,
+      counterToastTimer: null,
       collapsed: loadCollapsed(),
       selected: null,
       editingId: null,
@@ -1474,6 +2569,45 @@
       closeCompleted: document.getElementById("closeCompleted"),
       completedSummary: document.getElementById("completedSummary"),
       completedList: document.getElementById("completedList"),
+      counterShortcuts: document.getElementById("counterShortcuts"),
+      counterBackdrop: document.getElementById("counterBackdrop"),
+      closeCounter: document.getElementById("closeCounter"),
+      counterFilters: document.getElementById("counterFilters"),
+      counterPeriods: document.getElementById("counterPeriods"),
+      counterPrev: document.getElementById("counterPrev"),
+      counterNext: document.getElementById("counterNext"),
+      counterRangeLabel: document.getElementById("counterRangeLabel"),
+      counterSummary: document.getElementById("counterSummary"),
+      counterCharts: document.getElementById("counterCharts"),
+      counterRecords: document.getElementById("counterRecords"),
+      openCounterItem: document.getElementById("openCounterItem"),
+      openCounterRecord: document.getElementById("openCounterRecord"),
+      counterItemBackdrop: document.getElementById("counterItemBackdrop"),
+      closeCounterItem: document.getElementById("closeCounterItem"),
+      cancelCounterItem: document.getElementById("cancelCounterItem"),
+      counterItemForm: document.getElementById("counterItemForm"),
+      counterItemTitle: document.getElementById("counterItemTitle"),
+      counterItemId: document.getElementById("counterItemId"),
+      counterItemName: document.getElementById("counterItemName"),
+      counterItemIncrement: document.getElementById("counterItemIncrement"),
+      counterItemUnit: document.getElementById("counterItemUnit"),
+      counterItemPinned: document.getElementById("counterItemPinned"),
+      counterItemColor: document.getElementById("counterItemColor"),
+      counterKinds: document.getElementById("counterKinds"),
+      counterColors: document.getElementById("counterColors"),
+      counterRecordBackdrop: document.getElementById("counterRecordBackdrop"),
+      counterRecordTitle: document.getElementById("counterRecordTitle"),
+      closeCounterRecord: document.getElementById("closeCounterRecord"),
+      cancelCounterRecord: document.getElementById("cancelCounterRecord"),
+      counterRecordTabs: document.getElementById("counterRecordTabs"),
+      counterCalendarSummary: document.getElementById("counterCalendarSummary"),
+      counterCalendarPrev: document.getElementById("counterCalendarPrev"),
+      counterCalendarNext: document.getElementById("counterCalendarNext"),
+      counterCalendarMonthLabel: document.getElementById("counterCalendarMonthLabel"),
+      counterCalendarGrid: document.getElementById("counterCalendarGrid"),
+      counterToast: document.getElementById("counterToast"),
+      counterToastMessage: document.getElementById("counterToastMessage"),
+      counterToastUndo: document.getElementById("counterToastUndo"),
       newForm: document.getElementById("newForm"),
       newText: document.getElementById("newText"),
       dateSelect: document.getElementById("dateSelect"),
@@ -1497,10 +2631,41 @@
     els.completedBackdrop.addEventListener("mousedown", (event) => {
       if (event.target === els.completedBackdrop) closeCompleted();
     });
+    els.counterBackdrop.addEventListener("mousedown", (event) => {
+      if (event.target === els.counterBackdrop) closeCounter();
+    });
+    els.counterItemBackdrop.addEventListener("mousedown", (event) => {
+      if (event.target === els.counterItemBackdrop) closeCounterItem();
+    });
+    els.counterRecordBackdrop.addEventListener("mousedown", (event) => {
+      if (event.target === els.counterRecordBackdrop) closeCounterRecord();
+    });
     els.toggleHelpMode.addEventListener("click", toggleHelpMode);
     els.closeHelp.addEventListener("click", closeHelp);
     els.closeCheckin.addEventListener("click", closeCheckin);
     els.closeCompleted.addEventListener("click", closeCompleted);
+    els.closeCounter.addEventListener("click", closeCounter);
+    els.openCounterItem.addEventListener("click", () => openCounterItem());
+    els.openCounterRecord.addEventListener("click", openCounterRecord);
+    els.closeCounterItem.addEventListener("click", closeCounterItem);
+    els.cancelCounterItem.addEventListener("click", closeCounterItem);
+    els.closeCounterRecord.addEventListener("click", closeCounterRecord);
+      els.cancelCounterRecord.addEventListener("click", closeCounterRecord);
+      els.counterItemForm.addEventListener("submit", submitCounterItem);
+      els.counterRecordTabs.addEventListener("click", handleCounterRecordTabClick);
+      els.counterCalendarPrev.addEventListener("click", () => moveCounterCalendarMonth(-1));
+      els.counterCalendarNext.addEventListener("click", () => moveCounterCalendarMonth(1));
+      els.counterCalendarGrid.addEventListener("click", handleCounterCalendarClick);
+    els.counterToastUndo.addEventListener("click", undoCounterRecord);
+    els.counterShortcuts.addEventListener("click", handleCounterShortcutClick);
+    els.counterFilters.addEventListener("click", handleCounterFilterClick);
+    els.counterRecords.addEventListener("click", handleCounterRecordListClick);
+    els.counterPeriods.addEventListener("click", handleCounterPeriodClick);
+    els.counterPrev.addEventListener("click", () => moveCounterPeriod(-1));
+    els.counterNext.addEventListener("click", () => moveCounterPeriod(1));
+    els.counterKinds.addEventListener("click", handleCounterKindClick);
+    els.counterColors.addEventListener("click", handleCounterColorClick);
+    els.counterItemPinned.addEventListener("click", toggleCounterPinned);
     els.newForm.addEventListener("submit", submitNewItem);
     document.addEventListener("keydown", handleKeys);
 
@@ -1516,6 +2681,9 @@
         state.todos = Array.isArray(data.todos) ? data.todos : [];
         state.dailyTasks = Array.isArray(data.dailyTasks) ? data.dailyTasks : [];
         state.completedCount = Number(data.completedCount) || 0;
+        state.counterItems = Array.isArray(data.counterItems) ? data.counterItems : [];
+        state.counterSelectedIds = state.counterSelectedIds.filter((id) => state.counterItems.some((item) => item.id === id));
+        if (!state.counterSelectedIds.length) state.counterSelectedIds = state.counterItems.map((item) => item.id);
         renderCompletedBadge();
         ensureSelected(options.preferId);
         render();
@@ -1528,6 +2696,7 @@
     }
 
     function render() {
+      renderCounterShortcuts();
       renderDailyTasks();
       els.groups.innerHTML = "";
       renderGroup({
@@ -1552,6 +2721,563 @@
       const count = Number(state.completedCount) || 0;
       els.openCompleted.title = count > 0 ? `已完成 ${count} 项` : "已完成";
       els.openCompleted.setAttribute("aria-label", count > 0 ? `打开已完成任务，共 ${count} 项` : "打开已完成任务");
+    }
+
+    function renderCounterShortcuts() {
+      const pinned = state.counterItems
+        .filter((item) => Number(item.active ?? 1) && Number(item.pinned))
+        .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))
+        .slice(0, 3);
+      const shortcuts = pinned.map((item, index) => `
+        <button class="counter-shortcut" type="button" data-counter-id="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color || COUNTER_COLORS[0])}" title="记录 ${escapeHtml(item.name)}，今天累计 ${escapeHtml(formatCounterValue(Number(item.todayTotal) || 0, item.unit))}（Alt+${index + 1}）">
+          <i class="counter-dot"></i>
+          <span class="counter-shortcut-label"><strong>${escapeHtml(item.name)}</strong><small>点击 +${escapeHtml(formatCounterValue(Number(item.incrementValue) || 1, item.unit))}</small></span>
+        </button>`).join("");
+      els.counterShortcuts.innerHTML = shortcuts + `
+        <button class="counter-manage-button" type="button" data-counter-manage title="累计记录" aria-label="打开累计记录">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V10"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path><path d="M3.5 19.5h17"></path></svg>
+        </button>`;
+    }
+
+    function handleCounterShortcutClick(event) {
+      const manage = event.target.closest("[data-counter-manage]");
+      if (manage) {
+        openCounter();
+        return;
+      }
+      const button = event.target.closest("[data-counter-id]");
+      if (!button) return;
+      void recordCounterQuick(button.dataset.counterId);
+    }
+
+    async function recordCounterQuick(itemId, options = {}) {
+      if (state.loading) return null;
+      const item = state.counterItems.find((entry) => entry.id === itemId);
+      if (!item) return null;
+      const amount = Number(options.amount ?? item.incrementValue) || 1;
+      const recordedDate = options.recordedDate || state.today;
+      setStatus("记录中...");
+      try {
+        const record = await apiPost("/api/counter-records", {
+          itemId,
+          amount,
+          recordedDate,
+          recordedAt: new Date().toISOString(),
+        });
+        if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + amount;
+        renderCounterShortcuts();
+        showCounterToast(item, record);
+        if (isCounterOpen()) await loadCounterData();
+        setStatus("已记录");
+        return record;
+      } catch (error) {
+        setStatus("记录失败：" + error.message, true);
+        return null;
+      }
+    }
+
+    function showCounterToast(item, record) {
+      window.clearTimeout(state.counterToastTimer);
+      state.counterToastRecordId = record.id;
+      els.counterToastMessage.innerHTML = `已记录：<b>${escapeHtml(item.name)} +${escapeHtml(formatCounterValue(Number(record.amount), item.unit))}</b>`;
+      els.counterToast.classList.add("open");
+      state.counterToastTimer = window.setTimeout(hideCounterToast, 5000);
+    }
+
+    function hideCounterToast() {
+      els.counterToast.classList.remove("open");
+      state.counterToastRecordId = null;
+    }
+
+    async function undoCounterRecord() {
+      const id = state.counterToastRecordId;
+      if (!id) return;
+      const record = state.counterRecords.find((entry) => entry.id === id);
+      try {
+        await apiPost("/api/counter-records/delete", { id });
+        hideCounterToast();
+        if (record && record.recordedDate === state.today) {
+          const item = state.counterItems.find((entry) => entry.id === record.itemId);
+          if (item) item.todayTotal = Math.max(0, (Number(item.todayTotal) || 0) - Number(record.amount || 0));
+        } else {
+          await refresh();
+        }
+        renderCounterShortcuts();
+        if (isCounterOpen()) await loadCounterData();
+        if (isCounterRecordOpen()) await loadCounterCalendar();
+        setStatus("已撤销记录");
+      } catch (error) {
+        setStatus("撤销失败：" + error.message, true);
+      }
+    }
+
+    function openCounter() {
+      if (isNewModalOpen()) closeModal({ returnFocus: false });
+      if (isHelpOpen()) closeHelp({ returnFocus: false });
+      if (isCompletedOpen()) closeCompleted({ returnFocus: false });
+      if (isCheckinOpen()) closeCheckin({ returnFocus: false });
+      els.counterBackdrop.classList.add("open");
+      void loadCounterData();
+      window.setTimeout(() => els.openCounterItem.focus(), 0);
+    }
+
+    function closeCounter(options = {}) {
+      els.counterBackdrop.classList.remove("open");
+      closeCounterItem({ returnFocus: false });
+      closeCounterRecord({ returnFocus: false });
+      if (options.returnFocus !== false) {
+        const manage = els.counterShortcuts.querySelector("[data-counter-manage]");
+        if (manage) manage.focus();
+      }
+    }
+
+    async function loadCounterData() {
+      const range = counterDateRange();
+      els.counterSummary.innerHTML = '<div class="counter-empty">统计加载中...</div>';
+      try {
+        const data = await apiGet(`/api/counters?today=${state.today}&from=${range.from}&to=${range.to}`);
+        const previousTotals = new Map(state.counterItems.map((item) => [item.id, Number(item.todayTotal) || 0]));
+        state.counterRecords = Array.isArray(data.records) ? data.records : [];
+        state.counterItems = (Array.isArray(data.items) ? data.items : []).map((item) => ({ ...item, todayTotal: previousTotals.get(item.id) || 0 }));
+        if (range.from <= state.today && range.to >= state.today) {
+          for (const item of state.counterItems) {
+            item.todayTotal = state.counterRecords.filter((record) => record.itemId === item.id && record.recordedDate === state.today).reduce((sum, record) => sum + Number(record.amount || 0), 0);
+          }
+        }
+        state.counterSelectedIds = state.counterSelectedIds.filter((id) => state.counterItems.some((item) => item.id === id));
+        if (!state.counterSelectedIds.length) state.counterSelectedIds = state.counterItems.map((item) => item.id);
+        renderCounterShortcuts();
+        renderCounterView();
+      } catch (error) {
+        els.counterSummary.innerHTML = `<div class="counter-empty">加载失败：${escapeHtml(error.message)}</div>`;
+        setStatus("累计加载失败：" + error.message, true);
+      }
+    }
+
+    function renderCounterView() {
+      const range = counterDateRange();
+      els.counterRangeLabel.textContent = range.label;
+      els.counterPeriods.querySelectorAll("[data-period]").forEach((button) => button.classList.toggle("active", button.dataset.period === state.counterPeriod));
+      renderCounterFilters();
+      renderCounterSummary();
+      renderCounterCharts();
+      renderCounterRecords();
+    }
+
+    function renderCounterFilters() {
+      if (!state.counterItems.length) {
+        els.counterFilters.innerHTML = '<div class="counter-sidebar-title">显示记录项</div><div class="counter-empty">还没有记录项</div>';
+        return;
+      }
+      const selectedCount = state.counterSelectedIds.length;
+      els.counterFilters.innerHTML = `<div class="counter-sidebar-title">显示记录项</div><div class="counter-filter-actions"><span>已选择 ${selectedCount} / ${state.counterItems.length}</span><button type="button" data-counter-select-all>${selectedCount === state.counterItems.length ? "清空" : "全选"}</button></div>` + state.counterItems.map((item) => {
+        const checked = state.counterSelectedIds.includes(item.id);
+        return `<div class="counter-filter-row"><button class="counter-check ${checked ? "checked" : ""}" type="button" data-counter-toggle="${escapeHtml(item.id)}">${checked ? "✓" : ""}</button><i class="counter-filter-dot" style="--counter-color:${escapeHtml(item.color)}"></i><span class="counter-filter-name">${escapeHtml(item.name)}</span><span class="counter-unit-pill">${escapeHtml(item.unit)}</span><div class="counter-item-actions"><button type="button" data-counter-edit="${escapeHtml(item.id)}">编辑</button><button type="button" data-counter-archive="${escapeHtml(item.id)}">删除</button></div></div>`;
+      }).join("");
+    }
+
+    function handleCounterFilterClick(event) {
+      const all = event.target.closest("[data-counter-select-all]");
+      if (all) {
+        state.counterSelectedIds = state.counterSelectedIds.length === state.counterItems.length ? [] : state.counterItems.map((item) => item.id);
+        renderCounterView();
+        return;
+      }
+      const toggle = event.target.closest("[data-counter-toggle]");
+      if (toggle) {
+        const id = toggle.dataset.counterToggle;
+        state.counterSelectedIds = state.counterSelectedIds.includes(id) ? state.counterSelectedIds.filter((entry) => entry !== id) : state.counterSelectedIds.concat(id);
+        renderCounterView();
+        return;
+      }
+      const edit = event.target.closest("[data-counter-edit]");
+      if (edit) {
+        openCounterItem(edit.dataset.counterEdit);
+        return;
+      }
+      const archive = event.target.closest("[data-counter-archive]");
+      if (archive) void archiveCounterItem(archive.dataset.counterArchive);
+    }
+
+    function handleCounterPeriodClick(event) {
+      const button = event.target.closest("[data-period]");
+      if (!button || button.dataset.period === state.counterPeriod) return;
+      state.counterPeriod = button.dataset.period;
+      state.counterCursor = state.today;
+      void loadCounterData();
+    }
+
+    function moveCounterPeriod(direction) {
+      const cursor = parseDate(state.counterCursor);
+      if (state.counterPeriod === "day") cursor.setDate(cursor.getDate() + direction);
+      if (state.counterPeriod === "week") cursor.setDate(cursor.getDate() + direction * 7);
+      if (state.counterPeriod === "month") cursor.setMonth(cursor.getMonth() + direction);
+      if (state.counterPeriod === "year") cursor.setFullYear(cursor.getFullYear() + direction);
+      state.counterCursor = toLocalDateString(cursor);
+      void loadCounterData();
+    }
+
+    function counterDateRange() {
+      const cursor = parseDate(state.counterCursor);
+      if (state.counterPeriod === "day") {
+        const value = toLocalDateString(cursor);
+        return { from: value, to: value, label: `${cursor.getMonth() + 1}月${cursor.getDate()}日` };
+      }
+      if (state.counterPeriod === "week") {
+        const offset = (cursor.getDay() + 6) % 7;
+        const from = addDays(toLocalDateString(cursor), -offset);
+        const to = addDays(from, 6);
+        return { from, to, label: `${formatMonthDay(from)} — ${formatMonthDay(to)}` };
+      }
+      if (state.counterPeriod === "month") {
+        const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+        return { from: toLocalDateString(first), to: toLocalDateString(last), label: `${first.getFullYear()}年${first.getMonth() + 1}月` };
+      }
+      const first = new Date(cursor.getFullYear(), 0, 1);
+      const last = new Date(cursor.getFullYear(), 11, 31);
+      return { from: toLocalDateString(first), to: toLocalDateString(last), label: `${first.getFullYear()}年` };
+    }
+
+    function renderCounterSummary() {
+      const items = selectedCounterItems();
+      if (!items.length) {
+        els.counterSummary.innerHTML = '<div class="counter-empty">请至少勾选一个记录项</div>';
+        return;
+      }
+      els.counterSummary.innerHTML = items.slice(0, 3).map((item) => {
+        const records = selectedCounterRecords().filter((record) => record.itemId === item.id);
+        const total = records.reduce((sum, record) => sum + Number(record.amount || 0), 0);
+        return `<div class="counter-summary"><div class="counter-summary-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}</div><div class="counter-summary-value">${escapeHtml(formatCounterValue(total, item.unit))}</div><div class="counter-summary-sub">${records.length} 条记录</div></div>`;
+      }).join("");
+    }
+
+    function renderCounterCharts() {
+      const items = selectedCounterItems();
+      const records = selectedCounterRecords();
+      if (!items.length) {
+        els.counterCharts.innerHTML = "";
+        return;
+      }
+      const range = counterDateRange();
+      const buckets = buildCounterBuckets(range);
+      els.counterCharts.innerHTML = items.map((item) => {
+        const values = buckets.map((bucket) => records.filter((record) => record.itemId === item.id && counterRecordBucket(record, range) === bucket.key).reduce((sum, record) => sum + Number(record.amount || 0), 0));
+        const maximum = Math.max(0, ...values);
+        const bars = buckets.map((bucket, bucketIndex) => {
+          const value = values[bucketIndex];
+          const height = maximum > 0 ? Math.max(value > 0 ? 2 : 0, value / maximum * 100) : 0;
+          return `<div class="counter-bar-group"><i class="counter-bar" title="${escapeHtml(item.name)} ${escapeHtml(formatCounterValue(value, item.unit))}" style="height:${height}%;--counter-color:${escapeHtml(item.color)}"></i><span class="counter-bar-label">${escapeHtml(bucket.label)}</span></div>`;
+        }).join("");
+        const axisMax = maximum || 1;
+        return `<section class="counter-panel" data-counter-chart-item="${escapeHtml(item.id)}"><div class="counter-panel-head"><h3><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}（${escapeHtml(item.unit)}）</h3></div><div class="counter-chart"><div class="counter-y-axis"><span>${escapeHtml(formatCounterAmount(axisMax))}</span><span>${escapeHtml(formatCounterAmount(axisMax / 2))}</span><span>0</span></div><div class="counter-plot"><i class="counter-gridline" style="top:0"></i><i class="counter-gridline" style="top:50%"></i><div class="counter-bars" style="--bucket-count:${buckets.length}">${bars}</div></div></div></section>`;
+      }).join("");
+    }
+
+    function renderCounterRecords() {
+      const records = selectedCounterRecords().slice(0, 80);
+      const itemMap = new Map(state.counterItems.map((item) => [item.id, item]));
+      if (!records.length) {
+        els.counterRecords.innerHTML = '<div class="counter-empty">这个时间范围还没有记录</div>';
+        return;
+      }
+      els.counterRecords.innerHTML = records.map((record) => {
+        const item = itemMap.get(record.itemId);
+        if (!item) return "";
+        return `<div class="counter-record-row"><span class="counter-record-time">${escapeHtml(formatCounterRecordTime(record))}</span><span class="counter-record-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}</span><span class="counter-record-value">+${escapeHtml(formatCounterValue(Number(record.amount), item.unit))}</span><button class="counter-record-delete" type="button" data-counter-record-delete="${escapeHtml(record.id)}" title="删除记录">×</button></div>`;
+      }).join("");
+    }
+
+    async function handleCounterRecordListClick(event) {
+      const button = event.target.closest("[data-counter-record-delete]");
+      if (!button || !window.confirm("删除这条累计记录？")) return;
+      try {
+        await apiPost("/api/counter-records/delete", { id: button.dataset.counterRecordDelete });
+        await refresh();
+        await loadCounterData();
+        setStatus("记录已删除");
+      } catch (error) {
+        setStatus("删除失败：" + error.message, true);
+      }
+    }
+
+    function selectedCounterItems() {
+      return state.counterItems.filter((item) => state.counterSelectedIds.includes(item.id));
+    }
+
+    function selectedCounterRecords() {
+      return state.counterRecords.filter((record) => state.counterSelectedIds.includes(record.itemId));
+    }
+
+    function buildCounterBuckets(range) {
+      if (state.counterPeriod === "day") return Array.from({ length: 6 }, (_, index) => ({ key: String(index), label: `${index * 4}时` }));
+      if (state.counterPeriod === "year") return Array.from({ length: 12 }, (_, index) => ({ key: `${range.from.slice(0, 4)}-${String(index + 1).padStart(2, "0")}`, label: `${index + 1}月` }));
+      const count = daysBetween(range.from, range.to) + 1;
+      return Array.from({ length: count }, (_, index) => {
+        const date = addDays(range.from, index);
+        const parsed = parseDate(date);
+        const showMonthDay = state.counterPeriod === "week";
+        const showDay = state.counterPeriod === "month" && (index === 0 || parsed.getDate() % 5 === 0 || index === count - 1);
+        return { key: date, label: showMonthDay ? `周${WEEKDAYS[parsed.getDay()]}` : (showDay ? String(parsed.getDate()) : "") };
+      });
+    }
+
+    function counterRecordBucket(record, range) {
+      if (state.counterPeriod === "day") {
+        if (record.recordedDate !== range.from) return "";
+        const date = new Date(record.recordedAt);
+        return String(Math.floor((Number.isNaN(date.getTime()) ? 0 : date.getHours()) / 4));
+      }
+      if (state.counterPeriod === "year") return String(record.recordedDate || "").slice(0, 7);
+      return record.recordedDate;
+    }
+
+    function openCounterItem(itemId = "") {
+      const item = state.counterItems.find((entry) => entry.id === itemId);
+      els.counterItemId.value = item?.id || "";
+      els.counterItemTitle.textContent = item ? "编辑记录项" : "新建记录项";
+      els.counterItemName.value = item?.name || "";
+      els.counterItemIncrement.value = Number(item?.incrementValue) || 1;
+      els.counterItemUnit.value = item?.unit || "次";
+      state.counterItemKind = item && COUNTER_KINDS.includes(item.kind) ? item.kind : (item ? "custom" : "count");
+      state.counterItemPinned = item ? Boolean(Number(item.pinned)) : true;
+      els.counterItemColor.value = item?.color || COUNTER_COLORS[0];
+      renderCounterItemFormState();
+      els.counterItemBackdrop.classList.add("open");
+      window.setTimeout(() => els.counterItemName.focus(), 0);
+    }
+
+    function closeCounterItem(options = {}) {
+      els.counterItemBackdrop.classList.remove("open");
+      if (options.returnFocus !== false && isCounterOpen()) els.openCounterItem.focus();
+    }
+
+    function handleCounterKindClick(event) {
+      const button = event.target.closest("[data-kind]");
+      if (!button) return;
+      state.counterItemKind = button.dataset.kind;
+      els.counterItemUnit.value = counterDefaultUnit(state.counterItemKind);
+      renderCounterItemFormState();
+    }
+
+    function handleCounterColorClick(event) {
+      const button = event.target.closest("[data-color]");
+      if (!button) return;
+      els.counterItemColor.value = button.dataset.color;
+      renderCounterItemFormState();
+    }
+
+    function toggleCounterPinned() {
+      state.counterItemPinned = !state.counterItemPinned;
+      renderCounterItemFormState();
+    }
+
+    function renderCounterItemFormState() {
+      els.counterKinds.querySelectorAll("[data-kind]").forEach((button) => button.classList.toggle("active", button.dataset.kind === state.counterItemKind));
+      els.counterColors.querySelectorAll("[data-color]").forEach((button) => button.classList.toggle("active", button.dataset.color === els.counterItemColor.value));
+      els.counterItemPinned.classList.toggle("active", state.counterItemPinned);
+      els.counterItemPinned.setAttribute("aria-pressed", String(state.counterItemPinned));
+    }
+
+    async function submitCounterItem(event) {
+      event.preventDefault();
+      const name = els.counterItemName.value.trim();
+      if (!name) {
+        els.counterItemName.focus();
+        return;
+      }
+      const id = els.counterItemId.value;
+      const payload = { id, name, kind: state.counterItemKind, unit: els.counterItemUnit.value, incrementValue: Number(els.counterItemIncrement.value), color: els.counterItemColor.value, pinned: state.counterItemPinned };
+      try {
+        const saved = await apiPost(id ? "/api/counter-items/update" : "/api/counter-items", payload);
+        if (!id && saved?.id) state.counterSelectedIds = state.counterSelectedIds.concat(saved.id);
+        closeCounterItem({ returnFocus: false });
+        await refresh();
+        if (isCounterOpen()) await loadCounterData();
+        setStatus(id ? "记录项已更新" : "记录项已创建");
+      } catch (error) {
+        setStatus("保存失败：" + error.message, true);
+      }
+    }
+
+    async function archiveCounterItem(id) {
+      const item = state.counterItems.find((entry) => entry.id === id);
+      if (!item || !window.confirm(`删除“${item.name}”？删除后不再显示这个记录项，但历史记录仍然保留。`)) return;
+      try {
+        await apiPost("/api/counter-items/archive", { id });
+        state.counterSelectedIds = state.counterSelectedIds.filter((entry) => entry !== id);
+        await refresh();
+        await loadCounterData();
+        setStatus("记录项已删除，历史记录仍保留");
+      } catch (error) {
+        setStatus("删除失败：" + error.message, true);
+      }
+    }
+
+    function openCounterRecord() {
+      if (!state.counterItems.length) {
+        openCounterItem();
+        return;
+      }
+      if (!state.counterItems.some((item) => item.id === state.counterCalendarItemId)) state.counterCalendarItemId = state.counterItems[0].id;
+      state.counterCalendarMonth = state.today.slice(0, 7) + "-01";
+      els.counterRecordBackdrop.classList.add("open");
+      renderCounterRecordTabs();
+      void loadCounterCalendar();
+      window.setTimeout(() => els.counterRecordTabs.querySelector(".active")?.focus(), 0);
+    }
+
+    function closeCounterRecord(options = {}) {
+      els.counterRecordBackdrop.classList.remove("open");
+      if (options.returnFocus !== false && isCounterOpen()) els.openCounterRecord.focus();
+    }
+
+    function renderCounterRecordTabs() {
+      els.counterRecordTabs.innerHTML = state.counterItems.map((item) => {
+        const active = item.id === state.counterCalendarItemId;
+        const increment = formatCounterValue(Number(item.incrementValue) || 1, item.unit);
+        return `<button class="counter-record-tab ${active ? "active" : ""}" type="button" role="tab" aria-selected="${active}" data-counter-record-item="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color)}">${escapeHtml(item.name)} · +${escapeHtml(increment)}</button>`;
+      }).join("");
+    }
+
+    function handleCounterRecordTabClick(event) {
+      const tab = event.target.closest("[data-counter-record-item]");
+      if (!tab || tab.dataset.counterRecordItem === state.counterCalendarItemId) return;
+      state.counterCalendarItemId = tab.dataset.counterRecordItem;
+      renderCounterRecordTabs();
+      void loadCounterCalendar();
+    }
+
+    async function loadCounterCalendar() {
+      const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId) || state.counterItems[0];
+      if (!item) return;
+      state.counterCalendarItemId = item.id;
+      renderCounterRecordTabs();
+      const range = counterCalendarRange();
+      state.counterCalendarLoading = true;
+      renderCounterCalendar();
+      try {
+        const data = await apiGet(`/api/counters?today=${state.today}&from=${range.from}&to=${range.to}`);
+        state.counterCalendarRecords = (Array.isArray(data.records) ? data.records : []).filter((record) => record.itemId === item.id);
+      } catch (error) {
+        setStatus("补记日历加载失败：" + error.message, true);
+        state.counterCalendarRecords = [];
+      } finally {
+        state.counterCalendarLoading = false;
+        renderCounterCalendar();
+      }
+    }
+
+    function renderCounterCalendar() {
+      const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId);
+      if (!item) return;
+      const increment = Number(item.incrementValue) || 1;
+      const range = counterCalendarRange();
+      const month = parseDate(range.from);
+      els.counterRecordTitle.textContent = `补记 · ${item.name}`;
+      els.counterCalendarSummary.textContent = `${item.name}每点击一次增加 ${formatCounterValue(increment, item.unit)}，可以连续点击同一天。`;
+      els.counterCalendarMonthLabel.textContent = `${month.getFullYear()}年${month.getMonth() + 1}月`;
+      els.counterCalendarNext.disabled = range.from >= state.today.slice(0, 7) + "-01";
+      if (state.counterCalendarLoading) {
+        els.counterCalendarGrid.innerHTML = '<div class="counter-empty" style="grid-column:1/-1">日历加载中...</div>';
+        return;
+      }
+      const totals = new Map();
+      for (const record of state.counterCalendarRecords) {
+        totals.set(record.recordedDate, (totals.get(record.recordedDate) || 0) + Number(record.amount || 0));
+      }
+      const firstWeekday = month.getDay();
+      const days = parseDate(range.to).getDate();
+      const cells = Array.from({ length: firstWeekday }, () => '<div class="counter-calendar-blank" aria-hidden="true"></div>');
+      for (let day = 1; day <= days; day += 1) {
+        const date = `${range.from.slice(0, 8)}${String(day).padStart(2, "0")}`;
+        const total = totals.get(date) || 0;
+        const disabled = date > state.today;
+        const totalText = disabled ? "" : (total > 0 ? `已记 ${formatCounterValue(total, item.unit)}` : `+${formatCounterValue(increment, item.unit)}`);
+        const title = disabled ? `${date}，未来日期不能补记` : `${date}，点击增加 ${formatCounterValue(increment, item.unit)}`;
+        cells.push(`<button class="counter-calendar-day ${date === state.today ? "today" : ""} ${total > 0 ? "has-records" : ""}" type="button" data-counter-calendar-date="${date}" ${disabled ? "disabled" : ""} title="${escapeHtml(title)}"><span class="counter-calendar-date">${month.getMonth() + 1}/${day}</span><span class="counter-calendar-total">${escapeHtml(totalText)}</span></button>`);
+      }
+      els.counterCalendarGrid.innerHTML = cells.join("");
+    }
+
+    function counterCalendarRange() {
+      const first = parseDate(state.counterCalendarMonth);
+      const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+      return { from: toLocalDateString(first), to: toLocalDateString(last) };
+    }
+
+    function moveCounterCalendarMonth(direction) {
+      const current = parseDate(state.counterCalendarMonth);
+      current.setMonth(current.getMonth() + direction);
+      const next = toLocalDateString(new Date(current.getFullYear(), current.getMonth(), 1));
+      const currentMonth = state.today.slice(0, 7) + "-01";
+      if (next > currentMonth) return;
+      state.counterCalendarMonth = next;
+      void loadCounterCalendar();
+    }
+
+    async function handleCounterCalendarClick(event) {
+      const button = event.target.closest("[data-counter-calendar-date]");
+      if (!button || button.disabled || state.counterCalendarLoading) return;
+      const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId);
+      if (!item) return;
+      button.disabled = true;
+      const record = await recordCounterQuick(item.id, {
+        amount: Number(item.incrementValue) || 1,
+        recordedDate: button.dataset.counterCalendarDate,
+      });
+      if (!record) {
+        button.disabled = false;
+        return;
+      }
+      state.counterCalendarRecords.unshift(record);
+      renderCounterCalendar();
+    }
+
+    function counterDefaultUnit(kind) {
+      return { count: "次", duration: "小时", distance: "公里", custom: "单位" }[kind] || "次";
+    }
+
+    function formatCounterAmount(value) {
+      const rounded = Math.round((Number(value) || 0) * 100) / 100;
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function formatCounterValue(value, unit) {
+      const amount = Number(value) || 0;
+      if (unit === "小时") {
+        const minutes = Math.round(amount * 60);
+        const hours = Math.floor(minutes / 60);
+        const rest = minutes % 60;
+        if (hours && rest) return `${hours}小时${rest}分钟`;
+        if (hours) return `${hours}小时`;
+        return `${rest}分钟`;
+      }
+      return `${formatCounterAmount(amount)} ${unit || "单位"}`;
+    }
+
+    function formatCounterRecordTime(record) {
+      const date = new Date(record.recordedAt);
+      const time = Number.isNaN(date.getTime()) ? "" : ` ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      if (record.recordedDate === state.today) return `今天${time}`;
+      return `${formatMonthDay(record.recordedDate)}${time}`;
+    }
+
+    function formatMonthDay(value) {
+      const date = parseDate(value);
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function isCounterOpen() {
+      return els.counterBackdrop.classList.contains("open");
+    }
+
+    function isCounterItemOpen() {
+      return els.counterItemBackdrop.classList.contains("open");
+    }
+
+    function isCounterRecordOpen() {
+      return els.counterRecordBackdrop.classList.contains("open");
     }
 
     function renderGroup({ key, label, todos, offset }) {
@@ -1825,6 +3551,7 @@
       els.dateSelect.innerHTML = "";
       const daily = new Option("每天", "daily");
       els.dateSelect.add(daily);
+      els.dateSelect.add(new Option("累计", "counter"));
       els.dateSelect.add(new Option("购物清单", SHOPPING_GROUP));
       for (let offset = 0; offset <= 30; offset++) {
         const date = addDays(state.today, offset);
@@ -1930,7 +3657,16 @@
       const helpModalOpen = isHelpOpen();
       const checkinOpen = isCheckinOpen();
       const completedOpen = isCompletedOpen();
-      if (event.altKey && event.key.toLowerCase() === "n" && !helpModalOpen && !checkinOpen && !completedOpen) {
+      const counterOpen = isCounterOpen();
+      const counterItemOpen = isCounterItemOpen();
+      const counterRecordOpen = isCounterRecordOpen();
+      if (event.altKey && /^[123]$/.test(event.key) && !newModalOpen && !helpModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+        event.preventDefault();
+        const item = state.counterItems.filter((entry) => Number(entry.pinned)).sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))[Number(event.key) - 1];
+        if (item) void recordCounterQuick(item.id);
+        return;
+      }
+      if (event.altKey && event.key.toLowerCase() === "n" && !helpModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
         openModal();
         return;
@@ -1955,7 +3691,22 @@
         closeModal();
         return;
       }
-      if (newModalOpen || helpModalOpen || checkinOpen || completedOpen) return;
+      if (event.key === "Escape" && counterRecordOpen) {
+        event.preventDefault();
+        closeCounterRecord();
+        return;
+      }
+      if (event.key === "Escape" && counterItemOpen) {
+        event.preventDefault();
+        closeCounterItem();
+        return;
+      }
+      if (event.key === "Escape" && counterOpen) {
+        event.preventDefault();
+        closeCounter();
+        return;
+      }
+      if (newModalOpen || helpModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
       if (isTextEntryTarget(event.target) || state.editingId) return;
       const isPinShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "1" || event.code === "Numpad1");
       const isBottomShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "2" || event.code === "Numpad2");
@@ -2063,8 +3814,9 @@
 
     async function submitNewItem(event) {
       event.preventDefault();
-      const text = els.newText.value.trim();
-      const target = els.dateSelect.value;
+      const parsed = parseAutomaticNewItem(els.newText.value);
+      const text = parsed.text;
+      const target = parsed.type || parsed.dueDate || els.dateSelect.value;
       if (!text) {
         els.newText.focus();
         return;
@@ -2074,6 +3826,15 @@
       try {
         if (target === "daily") {
           await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
+        } else if (target === "counter") {
+          await apiPost("/api/counter-items", {
+            name: text,
+            kind: "count",
+            unit: "次",
+            incrementValue: 1,
+            pinned: true,
+            color: COUNTER_COLORS[0],
+          });
         } else {
           await apiPost("/api/todos", { text, dueDate: target, today: state.today });
         }
@@ -2083,6 +3844,75 @@
         setStatus("创建失败：" + error.message, true);
         openModal();
       }
+    }
+
+    function parseAutomaticNewItem(value) {
+      const text = normalizeTodoText(value);
+      const daily = text.match(/^(?:每日|每天)\s*[:：]\s*(.*)$/);
+      if (daily) return { type: "daily", text: normalizeTodoText(daily[1]) };
+      const counter = text.match(/^累计\s*[:：]\s*(.*)$/);
+      if (counter) return { type: "counter", text: normalizeTodoText(counter[1]) };
+      const namedRelativeDay = text.match(/^(明天|后天)\s*[:：]?\s*(.*)$/);
+      if (namedRelativeDay) {
+        return {
+          type: "",
+          dueDate: addDays(state.today, namedRelativeDay[1] === "明天" ? 1 : 2),
+          text: normalizeTodoText(namedRelativeDay[2]),
+        };
+      }
+      const relativeDay = text.match(/^([0-9]{1,3}|[一二两三四五六七八九十]+)天后\s*[:：]?\s*(.*)$/);
+      if (relativeDay) {
+        const dayCount = parseRelativeDayCount(relativeDay[1]);
+        if (Number.isInteger(dayCount) && dayCount >= 0) {
+          return {
+            type: "",
+            dueDate: addDays(state.today, dayCount),
+            text: normalizeTodoText(relativeDay[2]),
+          };
+        }
+      }
+      const weekday = text.match(/^(下周|下星期|周|星期)([一二三四五六日天])\s*[:：]?\s*(.*)$/);
+      if (weekday) {
+        return {
+          type: "",
+          dueDate: resolveWeekdayDate(weekday[2], weekday[1] === "下周" || weekday[1] === "下星期"),
+          text: normalizeTodoText(weekday[3]),
+        };
+      }
+      const monthDay = text.match(/^(\d{1,2})月(\d{1,2})[日号]/);
+      const dueDate = monthDay ? resolveMonthDayDate(Number(monthDay[1]), Number(monthDay[2])) : "";
+      return { type: "", dueDate, text };
+    }
+
+    function parseRelativeDayCount(value) {
+      if (/^\d+$/.test(value)) return Number(value);
+      const digits = { 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+      if (digits[value]) return digits[value];
+      const parts = value.split("十");
+      if (parts.length !== 2) return NaN;
+      const tens = parts[0] ? digits[parts[0]] : 1;
+      const ones = parts[1] ? digits[parts[1]] : 0;
+      return tens && Number.isInteger(ones) ? tens * 10 + ones : NaN;
+    }
+
+    function resolveWeekdayDate(weekday, nextWeek) {
+      const targetDay = { 日: 0, 天: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 }[weekday];
+      const currentDay = parseDate(state.today).getDay();
+      if (!nextWeek) return addDays(state.today, (targetDay - currentDay + 7) % 7);
+      const daysUntilNextMonday = currentDay === 0 ? 1 : 8 - currentDay;
+      const offsetFromMonday = targetDay === 0 ? 6 : targetDay - 1;
+      return addDays(state.today, daysUntilNextMonday + offsetFromMonday);
+    }
+
+    function resolveMonthDayDate(month, day) {
+      if (month < 1 || month > 12 || day < 1 || day > 31) return "";
+      const today = parseDate(state.today);
+      for (let year = today.getFullYear(); year <= today.getFullYear() + 8; year += 1) {
+        const candidate = new Date(year, month - 1, day);
+        if (candidate.getMonth() !== month - 1 || candidate.getDate() !== day || candidate < today) continue;
+        return toLocalDateString(candidate);
+      }
+      return "";
     }
 
     async function deleteDailyTask(task) {
@@ -2119,6 +3949,7 @@
     function openModal() {
       if (isHelpOpen()) closeHelp({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
+      if (isCounterOpen()) closeCounter({ returnFocus: false });
       renderDateOptions();
       renderDailyTasks();
       els.modalBackdrop.classList.add("open");
@@ -2136,6 +3967,7 @@
     function openHelp() {
       if (isNewModalOpen()) closeModal({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
+      if (isCounterOpen()) closeCounter({ returnFocus: false });
       state.helpMode = "manual";
       renderHelpContent();
       els.helpBackdrop.classList.add("open");
@@ -2153,6 +3985,7 @@
       if (isNewModalOpen()) closeModal({ returnFocus: false });
       if (isHelpOpen()) closeHelp({ returnFocus: false });
       if (isCheckinOpen()) closeCheckin({ returnFocus: false });
+      if (isCounterOpen()) closeCounter({ returnFocus: false });
       renderCompletedList();
       els.completedBackdrop.classList.add("open");
       void loadCompletedTodos();
@@ -2171,6 +4004,7 @@
       if (!task) return;
       if (isHelpOpen()) closeHelp({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
+      if (isCounterOpen()) closeCounter({ returnFocus: false });
       state.checkinTaskId = task.id;
       renderCheckin();
       els.checkinBackdrop.classList.add("open");

@@ -1,0 +1,62 @@
+CREATE TABLE IF NOT EXISTS todos (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  due_date TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  source_daily_task_id TEXT,
+  manual_sort INTEGER NOT NULL DEFAULT 0,
+  completed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS daily_tasks (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  placement TEXT NOT NULL DEFAULT 'top',
+  start_date TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS daily_task_instances (
+  daily_task_id TEXT NOT NULL,
+  generated_date TEXT NOT NULL,
+  todo_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (daily_task_id, generated_date)
+);
+
+CREATE TABLE IF NOT EXISTS daily_task_checkins (
+  daily_task_id TEXT NOT NULL,
+  checkin_date TEXT NOT NULL,
+  checked INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (daily_task_id, checkin_date)
+);
+
+CREATE TABLE IF NOT EXISTS counter_items (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'count',
+  unit TEXT NOT NULL DEFAULT '次',
+  increment_value REAL NOT NULL DEFAULT 1,
+  color TEXT NOT NULL DEFAULT '#256d85',
+  pinned INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS counter_records (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL,
+  amount REAL NOT NULL,
+  recorded_date TEXT NOT NULL,
+  recorded_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
