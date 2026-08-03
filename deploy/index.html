@@ -92,7 +92,7 @@
 
     .add-button,
     .completed-button,
-    .help-button {
+    .daily-button {
       width: 46px;
       height: 46px;
       border: 1px solid var(--line-strong);
@@ -117,15 +117,15 @@
     .add-button:focus-visible,
     .completed-button:hover,
     .completed-button:focus-visible,
-    .help-button:hover,
-    .help-button:focus-visible {
+    .daily-button:hover,
+    .daily-button:focus-visible {
       border-color: var(--accent);
       outline: 3px solid rgba(37, 109, 133, 0.18);
     }
 
     .add-button svg,
     .completed-button svg,
-    .help-button svg {
+    .daily-button svg {
       width: 24px;
       height: 24px;
       stroke-width: 2.4;
@@ -140,6 +140,42 @@
 
     .status.error {
       color: #9b2c20;
+    }
+
+    .status.cache-status {
+      color: #76520f;
+    }
+
+    .status.error.cache-status {
+      color: #9b2c20;
+    }
+
+    .retry-sync {
+      margin-left: 8px;
+      border: 1px solid currentColor;
+      border-radius: 7px;
+      background: transparent;
+      color: inherit;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    body.read-only .todo {
+      cursor: default;
+    }
+
+    body.read-only .checkbox,
+    body.read-only .todo-action,
+    body.read-only .daily-count-button,
+    body.read-only .daily-actions button,
+    body.read-only .counter-shortcut,
+    body.read-only .counter-quick-add,
+    body.read-only .counter-record-delete,
+    body.read-only .restore-button {
+      cursor: not-allowed;
+      opacity: 0.42;
     }
 
     .groups {
@@ -426,121 +462,77 @@
       gap: 14px;
     }
 
-    .help-modal {
+    .daily-modal {
       width: min(760px, 100%);
       max-height: min(78vh, 820px);
       display: flex;
       flex-direction: column;
     }
 
-    .help-head {
-      align-items: flex-start;
-      gap: 12px;
-      padding-top: 12px;
-      padding-bottom: 12px;
-    }
-
-    .help-title-wrap {
-      min-width: 0;
-      display: grid;
-      gap: 4px;
-      padding: 4px 0;
-    }
-
-    .help-subtitle {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .help-head-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-
-    .help-mode-button {
-      min-height: 38px;
-      padding: 0 14px;
-      border: 1px solid var(--line-strong);
-      border-radius: 8px;
-      background: #fff;
-      color: var(--text);
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .help-mode-button:hover,
-    .help-mode-button:focus-visible {
-      border-color: var(--accent);
-      background: rgba(37, 109, 133, 0.08);
-      outline: 3px solid rgba(37, 109, 133, 0.16);
-    }
-
-    .help-content {
+    .daily-manager-body {
       padding: 18px 20px 20px;
       display: grid;
-      gap: 18px;
-      overflow: auto;
+      gap: 14px;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    .help-section {
+    .daily-form {
       display: grid;
-      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
     }
 
-    .help-section h3 {
-      margin: 0;
-      font-size: 16px;
-      line-height: 1.35;
-    }
-
-    .help-section ul {
-      margin: 0;
-      padding-left: 18px;
-      display: grid;
-      gap: 7px;
-    }
-
-    .help-section li {
-      line-height: 1.55;
-      color: var(--text);
-    }
-
-    .help-prompt-box {
+    .daily-input {
       width: 100%;
-      min-height: 420px;
+      min-height: 44px;
       border: 1px solid var(--line-strong);
       border-radius: 8px;
-      padding: 12px 13px;
-      background: #fbf8f1;
+      padding: 0 13px;
+      background: #fff;
       color: var(--text);
       font: inherit;
-      font-size: 14px;
-      line-height: 1.55;
-      resize: vertical;
     }
 
-    .help-prompt-box:focus {
+    .daily-input:focus {
       outline: 3px solid rgba(37, 109, 133, 0.2);
       border-color: var(--accent);
     }
 
-    .daily-panel {
-      min-height: 116px;
-      max-height: 190px;
+    .daily-submit,
+    .daily-cancel {
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 8px;
+      font: inherit;
+      font-weight: 760;
+      cursor: pointer;
+    }
+
+    .daily-submit {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .daily-cancel {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .daily-cancel[hidden] {
+      display: none;
+    }
+
+    .daily-list-panel {
+      min-height: 180px;
+      max-height: min(55vh, 560px);
       overflow: auto;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fbf8f1;
-      padding: 10px 12px;
-    }
-
-    .daily-panel-title {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 8px;
+      padding: 6px 12px;
     }
 
     .daily-items {
@@ -553,21 +545,33 @@
 
     .daily-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      gap: 8px;
-      min-height: 30px;
+      gap: 12px;
+      min-height: 62px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .daily-row:last-child {
+      border-bottom: 0;
+    }
+
+    .daily-main {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
     }
 
     .daily-task-text {
       font-size: 15px;
       line-height: 1.35;
       overflow-wrap: anywhere;
-      padding-top: 3px;
+      font-weight: 680;
     }
 
     .daily-count-button {
-      min-width: 122px;
+      min-width: 0;
       min-height: 30px;
       border: 1px solid transparent;
       border-radius: 6px;
@@ -575,8 +579,8 @@
       color: var(--accent);
       display: inline-flex;
       align-items: center;
-      justify-content: flex-end;
-      padding: 0 7px;
+      justify-content: flex-start;
+      padding: 0 6px;
       font-size: 13px;
       font-variant-numeric: tabular-nums;
       white-space: pre;
@@ -598,6 +602,7 @@
     }
 
     .daily-action,
+    .daily-edit,
     .daily-delete {
       width: 30px;
       height: 30px;
@@ -612,6 +617,8 @@
 
     .daily-action:hover,
     .daily-action:focus-visible,
+    .daily-edit:hover,
+    .daily-edit:focus-visible,
     .daily-delete:hover,
     .daily-delete:focus-visible {
       background: rgba(37, 109, 133, 0.1);
@@ -896,7 +903,15 @@
       }
 
       .daily-row {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: 1fr;
+      }
+
+      .daily-form {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .daily-input {
+        grid-column: 1 / -1;
       }
 
       .completed-item {
@@ -909,13 +924,12 @@
       }
 
       .daily-actions {
-        grid-column: 2;
-        grid-row: 1;
+        grid-column: 1;
+        grid-row: 2;
+        justify-content: flex-end;
       }
 
       .daily-count-button {
-        grid-column: 1 / -1;
-        grid-row: 2;
         justify-content: flex-start;
         min-width: 0;
       }
@@ -973,7 +987,7 @@
 
     .add-button,
     .completed-button,
-    .help-button {
+    .daily-button {
       width: 42px;
       height: 42px;
       border-color: var(--line);
@@ -984,7 +998,7 @@
 
     .add-button:hover,
     .completed-button:hover,
-    .help-button:hover {
+    .daily-button:hover {
       transform: translateY(-1px);
       background: #f8fbfa;
       box-shadow: 0 7px 18px rgba(35, 48, 41, 0.1);
@@ -1325,7 +1339,7 @@
     .counter-filter-row {
       min-height: 48px;
       display: grid;
-      grid-template-columns: 18px 9px minmax(0, 1fr) auto;
+      grid-template-columns: 18px 9px minmax(0, 1fr) 42px;
       align-items: center;
       gap: 7px;
       border-bottom: 1px solid rgba(220, 226, 222, 0.7);
@@ -1371,14 +1385,27 @@
       font-weight: 620;
     }
 
-    .counter-unit-pill {
-      color: #455149;
-      background: rgba(69, 81, 73, 0.12);
-      border-radius: 999px;
-      padding: 3px 6px;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
+    .counter-quick-add {
+      min-width: 42px;
+      min-height: 30px;
+      border: 1px solid color-mix(in srgb, var(--counter-color, var(--accent)) 42%, var(--line));
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--counter-color, var(--accent)) 10%, white);
+      color: color-mix(in srgb, var(--counter-color, var(--accent)) 82%, #17201b);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .counter-quick-add:hover,
+    .counter-quick-add:focus-visible {
+      border-color: var(--counter-color, var(--accent));
+      outline: 3px solid color-mix(in srgb, var(--counter-color, var(--accent)) 14%, transparent);
+    }
+
+    .counter-quick-add:disabled {
+      cursor: wait;
+      opacity: 0.55;
     }
 
     .counter-item-actions {
@@ -1410,6 +1437,13 @@
       padding: 10px 12px;
     }
 
+    .counter-toolbar-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
     .counter-segment {
       gap: 2px;
       padding: 3px;
@@ -1436,6 +1470,10 @@
       font-weight: 720;
     }
 
+    .counter-mode-segment button {
+      min-width: 54px;
+    }
+
     .counter-range {
       gap: 7px;
       color: #445149;
@@ -1457,6 +1495,11 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 9px;
+    }
+
+    .counter-charts {
+      display: grid;
+      gap: 12px;
     }
 
     .counter-summary {
@@ -1536,6 +1579,103 @@
       height: 210px;
       display: grid;
       grid-template-columns: 38px minmax(0, 1fr);
+    }
+
+    .counter-pie-layout {
+      min-height: 210px;
+      display: grid;
+      grid-template-columns: minmax(168px, 0.72fr) minmax(220px, 1fr);
+      align-items: center;
+      gap: 22px;
+    }
+
+    .counter-pie {
+      position: relative;
+      width: min(190px, 100%);
+      aspect-ratio: 1;
+      justify-self: center;
+      border-radius: 50%;
+      background: var(--counter-pie-background, #eef2ef);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.84), 0 2px 7px rgba(31, 58, 48, 0.08);
+    }
+
+    .counter-pie::before {
+      content: "";
+      position: absolute;
+      inset: 28%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 1px #eef2ef;
+    }
+
+    .counter-pie-total {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-content: center;
+      gap: 2px;
+      text-align: center;
+    }
+
+    .counter-pie-total strong {
+      color: #25342d;
+      font-size: 25px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .counter-pie-total span {
+      color: #66736c;
+      font-size: 12px;
+      font-weight: 620;
+    }
+
+    .counter-pie-legend {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .counter-pie-legend-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 32px;
+      padding: 6px 8px;
+      border: 1px solid #e5ebe7;
+      border-radius: 7px;
+      color: #445149;
+      font-size: 13px;
+      font-weight: 620;
+    }
+
+    .counter-pie-legend-name {
+      display: inline-flex;
+      min-width: 0;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .counter-pie-legend-name b {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .counter-pie-legend-value {
+      color: #28372f;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .counter-pie-legend-percent {
+      min-width: 44px;
+      color: #53605a;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .counter-y-axis {
@@ -1688,52 +1828,6 @@
     .counter-form select:focus {
       border-color: var(--accent);
       outline: 3px solid rgba(37, 109, 133, 0.14);
-    }
-
-    .counter-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-    }
-
-    .counter-kind-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 7px;
-    }
-
-    .counter-kind {
-      min-height: 62px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fff;
-      text-align: left;
-      padding: 8px;
-      cursor: pointer;
-    }
-
-    .counter-kind strong,
-    .counter-kind small {
-      display: block;
-    }
-
-    .counter-kind strong {
-      font-size: 13px;
-      font-weight: 720;
-      line-height: 1.35;
-    }
-
-    .counter-kind small {
-      margin-top: 3px;
-      color: #5b6660;
-      font-size: 11px;
-      line-height: 1.35;
-    }
-
-    .counter-kind.active {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      box-shadow: inset 0 0 0 1px rgba(37, 109, 133, 0.11);
     }
 
     .counter-color-row {
@@ -2069,13 +2163,13 @@
         grid-template-columns: 1fr;
       }
 
-      .counter-sidebar {
-        display: none;
-      }
-
       .counter-toolbar {
         align-items: flex-start;
         flex-direction: column;
+      }
+
+      .counter-toolbar-controls {
+        width: 100%;
       }
 
       .counter-range {
@@ -2087,8 +2181,17 @@
         grid-template-columns: 1fr;
       }
 
-      .counter-kind-grid {
-        grid-template-columns: repeat(2, 1fr);
+      .counter-pie-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .counter-pie {
+        width: min(188px, 60vw);
+      }
+
+      .counter-pie-legend {
+        width: 100%;
       }
 
       .counter-record-modal {
@@ -2123,7 +2226,7 @@
 
       .add-button,
       .completed-button,
-      .help-button {
+      .daily-button {
         width: 40px;
         height: 40px;
         border-radius: 10px;
@@ -2159,11 +2262,13 @@
       </div>
       <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录"></div>
       <div class="topbar-actions">
-        <button class="help-button" id="openHelp" type="button" title="使用说明" aria-label="打开使用说明">
+        <button class="daily-button" id="openDaily" type="button" title="每日任务" aria-label="打开每日任务">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="8.5"></circle>
-            <path d="M9.8 9.2a2.5 2.5 0 1 1 4.4 1.6c-.85.73-1.45 1.27-1.45 2.48"></path>
-            <path d="M12 17.2h.01"></path>
+            <path d="M8 2v4"></path>
+            <path d="M16 2v4"></path>
+            <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+            <path d="M3 10h18"></path>
+            <path d="m8 15 2 2 5-5"></path>
           </svg>
         </button>
         <button class="completed-button" id="openCompleted" type="button" title="已完成" aria-label="打开已完成任务">
@@ -2197,10 +2302,6 @@
         </button>
       </div>
       <form class="modal-body" id="newForm">
-        <div class="daily-panel" aria-label="每日任务">
-          <div class="daily-panel-title">每日任务</div>
-          <ul class="daily-items" id="dailyItems"></ul>
-        </div>
         <input class="new-input" id="newText" autocomplete="off" maxlength="240" placeholder="输入待办事项">
         <div class="form-row">
           <select class="date-select" id="dateSelect"></select>
@@ -2210,24 +2311,27 @@
     </section>
   </div>
 
-  <div class="modal-backdrop" id="helpBackdrop" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <section class="modal help-modal">
-      <div class="modal-head help-head">
-        <div class="help-title-wrap">
-          <div class="modal-title" id="helpTitle">使用说明</div>
-          <div class="help-subtitle" id="helpSubtitle">按当前代码整理的操作与规则</div>
-        </div>
-        <div class="help-head-actions">
-          <button class="help-mode-button" id="toggleHelpMode" type="button">Prompt版</button>
-          <button class="icon-button" id="closeHelp" type="button" title="关闭使用说明">
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-              <path d="M6 6l12 12"></path>
-              <path d="M18 6L6 18"></path>
-            </svg>
-          </button>
+  <div class="modal-backdrop" id="dailyBackdrop" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
+    <section class="modal daily-modal">
+      <div class="modal-head">
+        <div class="modal-title" id="dailyTitle">每日任务</div>
+        <button class="icon-button" id="closeDaily" type="button" title="关闭每日任务">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M6 6l12 12"></path>
+            <path d="M18 6L6 18"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="daily-manager-body">
+        <form class="daily-form" id="dailyForm">
+          <input class="daily-input" id="dailyText" autocomplete="off" maxlength="240" placeholder="输入每日任务名称" aria-label="每日任务名称">
+          <button class="daily-cancel" id="cancelDailyEdit" type="button" hidden>取消</button>
+          <button class="daily-submit" id="dailySubmit" type="submit">新建</button>
+        </form>
+        <div class="daily-list-panel">
+          <ul class="daily-items" id="dailyItems"></ul>
         </div>
       </div>
-      <div class="help-content" id="helpContent"></div>
     </section>
   </div>
 
@@ -2286,16 +2390,23 @@
         <aside class="counter-sidebar" id="counterFilters" aria-label="累计记录项筛选"></aside>
         <div class="counter-main">
           <div class="counter-panel counter-toolbar">
-            <div class="counter-segment" id="counterPeriods" role="tablist" aria-label="统计周期">
-              <button type="button" data-period="day">日</button>
-              <button type="button" data-period="week" class="active">周</button>
-              <button type="button" data-period="month">月</button>
-              <button type="button" data-period="year">年</button>
+            <div class="counter-toolbar-controls">
+              <div class="counter-segment" id="counterPeriods" role="tablist" aria-label="统计周期">
+                <button type="button" data-period="day">日</button>
+                <button type="button" data-period="week" class="active">周</button>
+                <button type="button" data-period="month">月</button>
+                <button type="button" data-period="year">年</button>
+              </div>
+              <div class="counter-segment counter-mode-segment" id="counterChartModes" role="tablist" aria-label="图表模式">
+                <button type="button" data-chart-mode="separate" class="active">分开</button>
+                <button type="button" data-chart-mode="compare">对比</button>
+                <button type="button" data-chart-mode="sum">合计</button>
+              </div>
             </div>
             <div class="counter-range"><button id="counterPrev" type="button" aria-label="上一段时间">‹</button><strong id="counterRangeLabel"></strong><button id="counterNext" type="button" aria-label="下一段时间">›</button></div>
           </div>
           <div class="counter-summary-grid" id="counterSummary"></div>
-          <div id="counterCharts"></div>
+          <div class="counter-charts" id="counterCharts"></div>
           <section class="counter-panel"><div class="counter-panel-head"><div><h3>最近记录</h3><p>点击删除可以撤销一条历史记录</p></div></div><div class="counter-records" id="counterRecords"></div></section>
         </div>
       </div>
@@ -2308,12 +2419,6 @@
       <form class="counter-form" id="counterItemForm">
         <input id="counterItemId" type="hidden">
         <div><label for="counterItemName">名称</label><input id="counterItemName" maxlength="80" autocomplete="off" placeholder="例如：游泳"></div>
-        <div><label>记录方式</label><div class="counter-kind-grid" id="counterKinds">
-          <button class="counter-kind active" type="button" data-kind="count"><strong>次数</strong><small>俯卧撑、喝水</small></button>
-          <button class="counter-kind" type="button" data-kind="duration"><strong>时长</strong><small>游泳、学习</small></button>
-          <button class="counter-kind" type="button" data-kind="custom"><strong>自定义</strong><small>页、杯、组…</small></button>
-        </div></div>
-        <div class="counter-form-grid"><div><label for="counterItemIncrement">每次点击增加</label><input id="counterItemIncrement" type="number" min="0.001" step="0.001" value="1"></div><div><label for="counterItemUnit">单位</label><input id="counterItemUnit" maxlength="12" value="次"></div></div>
         <div class="counter-switch-row"><span><b>固定在首页顶部</b><small>首页最多显示 3 个，之后仍可在累计页面管理</small></span><button class="counter-switch active" id="counterItemPinned" type="button" aria-pressed="true"></button></div>
         <div><label>识别颜色</label><input id="counterItemColor" type="hidden" value="#256d85"><div class="counter-color-row" id="counterColors"><button class="counter-color-option active" type="button" data-color="#256d85" style="background:#256d85"></button><button class="counter-color-option" type="button" data-color="#b5672e" style="background:#b5672e"></button><button class="counter-color-option" type="button" data-color="#7562a8" style="background:#7562a8"></button><button class="counter-color-option" type="button" data-color="#2f7d4f" style="background:#2f7d4f"></button><button class="counter-color-option" type="button" data-color="#a04f58" style="background:#a04f58"></button></div></div>
         <div class="counter-form-actions"><button class="counter-secondary" id="cancelCounterItem" type="button">取消</button><button class="counter-primary" type="submit">保存</button></div>
@@ -2344,174 +2449,10 @@
     const API_TOKEN = "";
     const DAY_COUNT = 31;
     const SHOPPING_GROUP = "__shopping__";
+    const STATE_CACHE_KEY = "todo-state-cache-v1";
+    const STATE_CACHE_VERSION = 1;
     const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-    const COUNTER_KINDS = ["count", "duration", "custom"];
     const COUNTER_COLORS = ["#256d85", "#b5672e", "#7562a8", "#2f7d4f", "#a04f58"];
-    const HELP_MANUAL = [
-      {
-        title: "主界面",
-        items: [
-          "顶部会显示今天的中文日期，状态栏会提示同步、保存、创建或失败信息。",
-          "列表固定分成两类：最上方是购物清单，下面是今天到未来 30 天，总共 31 天。",
-          "右上角依次是使用说明、已完成、新建；已完成窗口里会显示普通任务历史完成总数。",
-          "购物清单默认折叠；三天后的日期分组也默认折叠，展开状态会保存在当前浏览器。"
-        ],
-      },
-      {
-        title: "新增任务",
-        items: [
-          "右上角加号或 Alt+N 打开新建窗口，输入内容后可选择每天、累计、购物清单或具体日期。",
-          "文本以“每日：”或“每天：”开头时会忽略下拉选择，自动去掉前缀并创建每日任务；以“累计：”开头时会自动创建每次增加 1 次的累计记录项。中英文冒号都支持。",
-          "普通任务以“周六”“下周日”等周几开头时，会自动安排到对应日期并删除周几文字；以“7月20日”或“7月21号”等月日开头时，也会自动安排日期，但保留完整任务文字。",
-          "以“明天”“后天”“三天后”或“4天后”等相对日期开头时，会自动安排到对应日期，并删除开头的时间文字。",
-          "文本最长 240 个字符，系统会自动去掉首尾空格并合并多余空白。",
-          "选择“每天”会生成一条每日任务，文本会永久写入“（每日任务）”前缀，并在当前 31 天范围里每天生成一条对应待办；选择普通日期则只创建一次。",
-          "每日任务右侧会显示完成次数和百分比，点击统计数字可以打开补打卡日历。"
-        ],
-      },
-      {
-        title: "普通待办操作",
-        items: [
-          "单击待办可选中，双击进入编辑；编辑时 Enter 保存，Escape 取消，失去焦点也会保存。",
-          "点击左侧复选框，或在选中待办时按空格，可以把它标记为完成；完成后会从列表中消失。",
-          "悬停右侧按钮或按数字 1 / 2 可以把当前待办置顶或置底；左右方向键会按一步上移或下移，移动时会遵守每日任务、前缀任务、普通任务的分区边界。",
-          "拖拽只支持在同一个日期分组或同一个购物清单分组内调整顺序，不能跨天拖动，也不能把任务拖出它允许停留的分区。"
-        ],
-      },
-      {
-        title: "已完成",
-        items: [
-          "已完成只统计和显示普通任务，不包含每日任务打卡；每日任务的历史补签和取消打卡仍在每日任务的补打卡日历里处理。",
-          "点击顶部已完成按钮会打开历史窗口，顶部显示普通任务总完成数，列表显示最近 100 条普通已完成任务。",
-          "每条历史记录会显示任务文本、原位置和完成时间；点击恢复会把它改回未完成并放回今天，文本以“买”开头时仍会按购物清单规则归入购物清单。"
-        ],
-      },
-      {
-        title: "累计记录",
-        items: [
-          "顶部最多显示 3 个已固定的记录项，单击会按预设值增加一次；Alt+1、Alt+2、Alt+3 可以记录对应的快捷项。",
-          "柱状图按钮打开“累计”窗口，可以按日、周、月、年查看数据，并勾选只显示部分记录项。每个记录项使用一张独立图表，不会与其他项目混在一起。",
-          "累计窗口支持新建、编辑和删除记录项；删除后记录项不再显示，但历史记录仍然保留。",
-          "点击后的底部提示可以立即撤销；打开“补记”后选择记录项，直接点击日历日期即可按预设值增加一条记录，同一天可以重复点击。新建窗口也可以切换到“累计记录项”直接创建。"
-        ],
-      },
-      {
-        title: "导航与折叠",
-        items: [
-          "上下方向键会在分组标题和待办之间移动选中项，方便整页键盘操作。",
-          "选中分组标题时按空格，会展开或收起这个分组；直接点击分组标题也可以。",
-          "按 Z 会把当前选中待办所在的分组折叠起来，并把选中移动到该分组标题。"
-        ],
-      },
-      {
-        title: "自动规则",
-        items: [
-          "普通任务文本只要以“买”开头，就会自动归入购物清单；如果误把“买……”创建成每日任务，则优先归类为“（每日任务）买……”。",
-          "未完成的普通待办如果已经过期，会自动顺延到今天，并按前缀任务和普通任务的新排序规则重新落位；已恢复的普通待办也会按同样规则落位。",
-          "每个日期分组内的顺序固定为：置顶的每日任务、前缀任务、普通任务、置底的每日任务。",
-          "前缀任务按第一个 : 或 ： 识别，大小写不敏感；同前缀形成小分组，新建同前缀会插到该小分组底部，全新前缀会插到前缀区底部、普通任务上方。",
-          "前缀任务置顶时，先移到所属小分组第一条；如果已经是第一条，就把整组向上移动一组，但不能超过置顶每日任务。置底规则相反，整组不能低于普通任务。",
-          "新建普通任务会插到普通任务区顶部；普通任务置顶不能超过前缀任务，置底不能超过置底每日任务。",
-          "每日任务置顶会移动到所有任务最顶端的每日任务区；每日任务置底会移动到所有任务最底端的每日任务区。",
-          "每日任务统计从任务开始日期算到今天，现有每日任务从 2026年7月8日 开始统计；补打卡只允许在开始日期到今天之间勾选或取消。",
-          "Worker 会自动把已有每日任务补上“（每日任务）”前缀，并把相关未完成实例按新规则重新排序。"
-        ],
-      },
-    ];
-    const HELP_PROMPT = [
-      "请生成一个和下面规格一致的中文 Todo 软件，前后端都要给出可运行代码。",
-      "",
-      "1. 技术与交付",
-      "- 前端做成单文件 HTML，内联 CSS 和原生 JavaScript，不依赖框架。",
-      "- 后端使用 Cloudflare Worker + D1，所有接口返回 JSON。",
-      "- 前端通过可配置的 API_BASE 与 API_TOKEN 访问后端，并在状态栏显示“同步中 / 已同步 / 保存中 / 创建中 / 失败”等状态。",
-      "",
-      "2. 视觉与布局",
-      "- 整体是克制、安静、偏纸张质感的暖米色界面，不要做营销页。",
-      "- 页面主体宽度约 920px，顶部是 sticky top bar。",
-      "- 左上显示标题 Todo 和今天的中文日期。",
-      "- 标题与右上按钮之间显示最多 3 个累计快捷记录项，并有一个柱状图按钮进入累计统计；右上仍有帮助、已完成和新建按钮。",
-      "- 累计统计中的每个记录项都使用独立柱状图，即使单位相同也不合并展示。",
-      "- 已完成按钮使用对勾圆圈或回转完成图标，完成总数显示在已完成弹窗顶部，不在按钮上显示数字徽标。",
-      "- 主体内容是分组列表：最上方固定“购物清单”，下面是今天到未来 30 天。",
-      "- 每个分组都是可折叠面板，标题显示中文日期名称和任务数量。",
-      "- 待办行左侧是复选框，中间是文本，右侧悬浮按钮为置顶和置底。",
-      "- 新建弹窗包含：每日任务列表、文本输入框、分类下拉、创建按钮；分类下拉包含每天、累计、购物清单和日期。",
-      "- 每个每日任务右侧显示打卡计数和百分比，例如 20/21   95.24%，点击后打开补打卡日历。",
-      "- 已完成弹窗标题为“已完成”，顶部显示普通任务已完成总数，列表显示最近 100 条普通已完成任务，每条包含文本、原位置、完成时间、恢复按钮。",
-      "- 还要有一个帮助弹窗，默认显示使用说明，头部有“Prompt版 / 说明版”切换按钮，Prompt 版显示可直接复制给 AI 的提示词。",
-      "",
-      "3. 前端交互",
-      "- 单击待办选中，双击进入编辑。",
-      "- 编辑时 Enter 保存，Escape 取消，blur 自动保存。",
-      "- 复选框或空格可以完成当前待办，完成后从当前列表消失。",
-      "- Alt+N 打开新建弹窗；Escape 关闭当前弹窗。",
-      "- 点击已完成按钮打开已完成弹窗；已完成弹窗不显示每日任务打卡记录。",
-      "- ArrowUp / ArrowDown 在分组标题和待办之间移动选中项。",
-      "- 选中待办时 ArrowLeft / ArrowRight 按一步上移 / 下移。",
-      "- 数字 1 置顶，数字 2 置底。",
-      "- 选中分组标题时按空格，切换展开 / 收起。",
-      "- Z 折叠当前选中待办所在分组，并把选中移动到分组标题。",
-      "- 支持拖拽排序，但只允许在同一分组内拖动。",
-      "- 折叠状态保存到 localStorage。",
-      "- 初次加载时优先选中今天的第一条待办；如果今天没有，再选中第一个可见项目。",
-      "- 购物清单默认折叠，三天后的日期默认折叠。",
-      "",
-      "4. 业务规则",
-      "- 视图范围固定为今天加未来 30 天，总共 31 天。",
-      "- 日期标题依次使用：今天、明天、后天、星期X（YYYY年M月D日）。",
-      "- 新建分类下拉包含：每天、累计、购物清单、今天到 30 天后。",
-      "- 新建文本以“每日：”或“每天：”开头时自动创建每日任务并去掉前缀；以“累计：”开头时自动创建默认单位为“次”、每次增加 1 的累计记录项；支持中英文冒号。自动前缀规则优先于下拉选择。",
-      "- 普通任务以“周X”或“下周X”开头时自动识别到对应日期，并从任务文本中删除时间前缀；以“X月X日”或“X月X号”开头时自动识别日期，但任务文本保持不变。",
-      "- 普通任务以“明天”“后天”或“X天后”开头时自动识别相对日期，并删除时间前缀；X 支持阿拉伯数字和一至九十九的中文数字。",
-      "- 选择“每天”时，创建一条 daily task，并在当前 31 天范围内为每天生成一条待办实例。",
-      "- 每日任务文本必须永久写入“（每日任务）”前缀；已有 daily task 和未完成实例也要自动迁移补前缀。",
-      "- 每日任务要有 startDate；现有任务从 2026-07-08 开始统计，新任务从创建当天开始统计。",
-      "- 每日任务统计分母为 startDate 到 today 的自然日数量，包含 today；分子为已打卡日期数量，百分比保留两位小数。",
-      "- 每日任务今日待办完成时等价于今天打卡；补打卡日历允许勾选或取消 startDate 到 today 之间的任意日期，不允许未来日期。",
-      "- 普通任务完成后进入已完成历史；每日任务完成只进入每日任务打卡统计，不进入已完成历史。",
-      "- 已完成历史只统计 source_daily_task_id 为空的普通任务，按 completed_at 倒序显示最近 100 条。",
-      "- 恢复普通已完成任务时清空 completed_at，并把 dueDate 改成 today；如果文本以“买”开头，则恢复到购物清单。恢复后按现有自动排序规则重新落位。",
-      "- daily task 拥有 top / bottom 位置属性和 sortOrder。每日任务置顶时设置为 top 并排到 top 每日任务最前；置底时设置为 bottom 并排到 bottom 每日任务最后，影响所有未完成实例。",
-      "- 文本以“买”开头的普通任务自动归入购物清单分组；如果“买……”被创建成每日任务，则按每日任务处理为“（每日任务）买……”。",
-      "- 未完成且已过期的普通待办自动顺延到今天，并按前缀/普通任务分区重新落位。",
-      "- 每个日期分组内排序固定为：置顶每日任务、前缀任务、普通任务、置底每日任务。",
-      "- 文本在第一个 : 或 ： 之前有相同前缀的普通待办形成小分组，前缀比较大小写不敏感。",
-      "- 新建同前缀任务插到对应小分组底部；新建全新前缀插到前缀任务区底部、普通任务上方。",
-      "- 前缀任务置顶：如果不是组内第一条，移动到组内第一条；如果已经是第一条，整组向上移动一组，但不能超过置顶每日任务。置底规则相反，整组不能低于普通任务。",
-      "- 新建普通任务插到普通任务区顶部；普通任务置顶不能超过前缀任务，置底不能超过置底每日任务。",
-      "- ArrowLeft / ArrowRight、拖拽、置顶、置底都必须遵守上述分区边界。",
-      "- 普通待办完成后做“完成”，不是直接物理删除。",
-      "- 创建和编辑都要做 trim，并把多个连续空白压成一个空格，文本长度上限 240。",
-      "",
-      "5. API 设计",
-      "- GET /api/state?today=YYYY-MM-DD&days=31 返回 { today, days, todos, dailyTasks, completedCount }。",
-      "- GET /api/completed?today=YYYY-MM-DD&limit=100 返回 { today, total, limit, todos }；todos 只包含普通已完成任务，字段为 id, text, dueDate, completedAt, createdAt。",
-      "- POST /api/todos body: { text, dueDate, today }。",
-      "- POST /api/daily-tasks body: { text, today, days }。",
-      "- POST /api/daily-tasks/delete body: { id }。",
-      "- POST /api/todos/complete body: { id, today }。",
-      "- POST /api/todos/restore body: { id, today }。",
-      "- POST /api/todos/update body: { id, text, today }。",
-      "- POST /api/todos/top body: { id, today }。",
-      "- POST /api/todos/bottom body: { id, today }。",
-      "- POST /api/todos/move body: { id, direction, today }。",
-      "- POST /api/daily-tasks/placement body: { id, placement }。",
-      "- POST /api/daily-tasks/checkin body: { id, date, checked, today }。",
-      "- GET /api/counters?today=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD 返回 { items, records }。",
-      "- POST /api/counter-items、/api/counter-items/update、/api/counter-items/archive 管理累计记录项。",
-      "- POST /api/counter-records 创建独立记录；POST /api/counter-records/delete 删除或撤销记录。",
-      "- 出错时返回 { error }，前端把错误展示到状态栏。",
-      "",
-      "6. 数据字段",
-      "- todo: id, text, dueDate, sortOrder, sourceDailyTaskId, createdAt, manualSort, completedAt。",
-      "- dailyTask: id, text, sortOrder, placement, startDate, completedCount, totalCount, completionPercent, checkins, createdAt。",
-      "- counterItem: id, name, kind, unit, incrementValue, color, pinned, sortOrder, active。",
-      "- counterRecord: id, itemId, amount, recordedDate, recordedAt, createdAt。",
-      "",
-      "请直接输出完整实现代码，默认中文界面，交互细节严格按以上规则落地。"
-    ].join("\n");
-
     const state = {
       today: toLocalDateString(new Date()),
       todos: [],
@@ -2522,8 +2463,8 @@
       counterRecords: [],
       counterSelectedIds: [],
       counterPeriod: "week",
+      counterChartMode: loadCounterChartMode(),
       counterCursor: toLocalDateString(new Date()),
-      counterItemKind: "count",
       counterItemPinned: true,
       counterCalendarItemId: null,
       counterCalendarMonth: toLocalDateString(new Date()).slice(0, 7) + "-01",
@@ -2536,9 +2477,12 @@
       editingId: null,
       editingText: "",
       pendingEditFocusId: null,
-      helpMode: "manual",
+      dailyEditingId: null,
       checkinTaskId: null,
       loading: false,
+      readOnly: true,
+      cacheLoaded: false,
+      cacheSavedAt: null,
       draggingId: null,
       dropTargetId: null,
       dropSide: null,
@@ -2549,19 +2493,19 @@
       groups: document.getElementById("groups"),
       status: document.getElementById("status"),
       todayLabel: document.getElementById("todayLabel"),
-      openHelp: document.getElementById("openHelp"),
+      openDaily: document.getElementById("openDaily"),
       openCompleted: document.getElementById("openCompleted"),
       openNew: document.getElementById("openNew"),
       closeNew: document.getElementById("closeNew"),
       modalBackdrop: document.getElementById("modalBackdrop"),
-      helpBackdrop: document.getElementById("helpBackdrop"),
+      dailyBackdrop: document.getElementById("dailyBackdrop"),
       checkinBackdrop: document.getElementById("checkinBackdrop"),
       completedBackdrop: document.getElementById("completedBackdrop"),
-      helpTitle: document.getElementById("helpTitle"),
-      helpSubtitle: document.getElementById("helpSubtitle"),
-      toggleHelpMode: document.getElementById("toggleHelpMode"),
-      closeHelp: document.getElementById("closeHelp"),
-      helpContent: document.getElementById("helpContent"),
+      closeDaily: document.getElementById("closeDaily"),
+      dailyForm: document.getElementById("dailyForm"),
+      dailyText: document.getElementById("dailyText"),
+      dailySubmit: document.getElementById("dailySubmit"),
+      cancelDailyEdit: document.getElementById("cancelDailyEdit"),
       closeCheckin: document.getElementById("closeCheckin"),
       checkinTitle: document.getElementById("checkinTitle"),
       checkinSummary: document.getElementById("checkinSummary"),
@@ -2574,6 +2518,7 @@
       closeCounter: document.getElementById("closeCounter"),
       counterFilters: document.getElementById("counterFilters"),
       counterPeriods: document.getElementById("counterPeriods"),
+      counterChartModes: document.getElementById("counterChartModes"),
       counterPrev: document.getElementById("counterPrev"),
       counterNext: document.getElementById("counterNext"),
       counterRangeLabel: document.getElementById("counterRangeLabel"),
@@ -2589,11 +2534,8 @@
       counterItemTitle: document.getElementById("counterItemTitle"),
       counterItemId: document.getElementById("counterItemId"),
       counterItemName: document.getElementById("counterItemName"),
-      counterItemIncrement: document.getElementById("counterItemIncrement"),
-      counterItemUnit: document.getElementById("counterItemUnit"),
       counterItemPinned: document.getElementById("counterItemPinned"),
       counterItemColor: document.getElementById("counterItemColor"),
-      counterKinds: document.getElementById("counterKinds"),
       counterColors: document.getElementById("counterColors"),
       counterRecordBackdrop: document.getElementById("counterRecordBackdrop"),
       counterRecordTitle: document.getElementById("counterRecordTitle"),
@@ -2615,15 +2557,15 @@
     };
 
     els.todayLabel.textContent = formatFullDate(state.today);
-    els.openHelp.addEventListener("click", openHelp);
+    els.openDaily.addEventListener("click", openDaily);
     els.openCompleted.addEventListener("click", openCompleted);
     els.openNew.addEventListener("click", openModal);
     els.closeNew.addEventListener("click", closeModal);
     els.modalBackdrop.addEventListener("mousedown", (event) => {
       if (event.target === els.modalBackdrop) closeModal();
     });
-    els.helpBackdrop.addEventListener("mousedown", (event) => {
-      if (event.target === els.helpBackdrop) closeHelp();
+    els.dailyBackdrop.addEventListener("mousedown", (event) => {
+      if (event.target === els.dailyBackdrop) closeDaily();
     });
     els.checkinBackdrop.addEventListener("mousedown", (event) => {
       if (event.target === els.checkinBackdrop) closeCheckin();
@@ -2640,8 +2582,9 @@
     els.counterRecordBackdrop.addEventListener("mousedown", (event) => {
       if (event.target === els.counterRecordBackdrop) closeCounterRecord();
     });
-    els.toggleHelpMode.addEventListener("click", toggleHelpMode);
-    els.closeHelp.addEventListener("click", closeHelp);
+    els.closeDaily.addEventListener("click", closeDaily);
+    els.dailyForm.addEventListener("submit", submitDailyTask);
+    els.cancelDailyEdit.addEventListener("click", cancelDailyTaskEdit);
     els.closeCheckin.addEventListener("click", closeCheckin);
     els.closeCompleted.addEventListener("click", closeCompleted);
     els.closeCounter.addEventListener("click", closeCounter);
@@ -2661,35 +2604,64 @@
     els.counterFilters.addEventListener("click", handleCounterFilterClick);
     els.counterRecords.addEventListener("click", handleCounterRecordListClick);
     els.counterPeriods.addEventListener("click", handleCounterPeriodClick);
+    els.counterChartModes.addEventListener("click", handleCounterChartModeClick);
     els.counterPrev.addEventListener("click", () => moveCounterPeriod(-1));
     els.counterNext.addEventListener("click", () => moveCounterPeriod(1));
-    els.counterKinds.addEventListener("click", handleCounterKindClick);
     els.counterColors.addEventListener("click", handleCounterColorClick);
     els.counterItemPinned.addEventListener("click", toggleCounterPinned);
     els.newForm.addEventListener("submit", submitNewItem);
     document.addEventListener("keydown", handleKeys);
 
     renderDateOptions();
-    renderHelpContent();
-    refresh();
+    if (restoreStateCache()) {
+      ensureSelected();
+      renderCompletedBadge();
+      render();
+    } else {
+      updateInteractionState();
+    }
+    void refresh({ initial: true });
 
     async function refresh(options = {}) {
-      setStatus("同步中...");
+      const initial = options.initial === true;
+      if (initial) {
+        setReadOnly(true);
+        setStatus(state.cacheLoaded
+          ? `正在同步，当前显示${formatCacheAge(state.cacheSavedAt)}的缓存（只读）`
+          : "正在连接数据库...");
+      } else {
+        setStatus("同步中...");
+      }
       try {
         state.loading = true;
         const data = await apiGet(`/api/state?today=${state.today}&days=${DAY_COUNT}`);
         state.todos = Array.isArray(data.todos) ? data.todos : [];
         state.dailyTasks = Array.isArray(data.dailyTasks) ? data.dailyTasks : [];
         state.completedCount = Number(data.completedCount) || 0;
-        state.counterItems = Array.isArray(data.counterItems) ? data.counterItems : [];
+        state.counterItems = (Array.isArray(data.counterItems) ? data.counterItems : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
         state.counterSelectedIds = state.counterSelectedIds.filter((id) => state.counterItems.some((item) => item.id === id));
         if (!state.counterSelectedIds.length) state.counterSelectedIds = state.counterItems.map((item) => item.id);
+        setReadOnly(false);
+        state.cacheLoaded = false;
+        state.cacheSavedAt = new Date().toISOString();
+        saveStateCache();
         renderCompletedBadge();
         ensureSelected(options.preferId);
         render();
         setStatus("已同步");
       } catch (error) {
-        setStatus("同步失败：" + error.message, true);
+        if (initial) {
+          setReadOnly(true);
+          setStatus(
+            state.cacheLoaded
+              ? `同步失败，当前显示${formatCacheAge(state.cacheSavedAt)}的缓存（只读）：${error.message}`
+              : `同步失败：${error.message}`,
+            true,
+            { retry: true, cache: state.cacheLoaded }
+          );
+        } else {
+          setStatus("同步失败：" + error.message, true);
+        }
       } finally {
         state.loading = false;
       }
@@ -2715,6 +2687,7 @@
         });
       }
       focusEditingInput();
+      updateInteractionState();
     }
 
     function renderCompletedBadge() {
@@ -2729,9 +2702,9 @@
         .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))
         .slice(0, 3);
       const shortcuts = pinned.map((item, index) => `
-        <button class="counter-shortcut" type="button" data-counter-id="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color || COUNTER_COLORS[0])}" title="记录 ${escapeHtml(item.name)}，今天累计 ${escapeHtml(formatCounterValue(Number(item.todayTotal) || 0, item.unit))}（Alt+${index + 1}）">
+        <button class="counter-shortcut" type="button" data-counter-id="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color || COUNTER_COLORS[0])}" title="记录 ${escapeHtml(item.name)}，今天累计 ${escapeHtml(formatCounterValue(Number(item.todayTotal) || 0))}（Alt+${index + 1}）">
           <i class="counter-dot"></i>
-          <span class="counter-shortcut-label"><strong>${escapeHtml(item.name)}</strong><small>点击 +${escapeHtml(formatCounterValue(Number(item.incrementValue) || 1, item.unit))}</small></span>
+          <span class="counter-shortcut-label"><strong>${escapeHtml(item.name)}</strong><small>点击 +1次</small></span>
         </button>`).join("");
       els.counterShortcuts.innerHTML = shortcuts + `
         <button class="counter-manage-button" type="button" data-counter-manage title="累计记录" aria-label="打开累计记录">
@@ -2747,24 +2720,24 @@
       }
       const button = event.target.closest("[data-counter-id]");
       if (!button) return;
+      if (!canWrite()) return;
       void recordCounterQuick(button.dataset.counterId);
     }
 
     async function recordCounterQuick(itemId, options = {}) {
-      if (state.loading) return null;
+      if (!canWrite() || state.loading) return null;
       const item = state.counterItems.find((entry) => entry.id === itemId);
       if (!item) return null;
-      const amount = Number(options.amount ?? item.incrementValue) || 1;
+      const amount = 1;
       const recordedDate = options.recordedDate || state.today;
       setStatus("记录中...");
       try {
         const record = await apiPost("/api/counter-records", {
           itemId,
-          amount,
           recordedDate,
           recordedAt: new Date().toISOString(),
         });
-        if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + amount;
+        if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + 1;
         renderCounterShortcuts();
         showCounterToast(item, record);
         if (isCounterOpen()) await loadCounterData();
@@ -2779,7 +2752,7 @@
     function showCounterToast(item, record) {
       window.clearTimeout(state.counterToastTimer);
       state.counterToastRecordId = record.id;
-      els.counterToastMessage.innerHTML = `已记录：<b>${escapeHtml(item.name)} +${escapeHtml(formatCounterValue(Number(record.amount), item.unit))}</b>`;
+      els.counterToastMessage.innerHTML = `已记录：<b>${escapeHtml(item.name)} +1次</b>`;
       els.counterToast.classList.add("open");
       state.counterToastTimer = window.setTimeout(hideCounterToast, 5000);
     }
@@ -2790,6 +2763,7 @@
     }
 
     async function undoCounterRecord() {
+      if (!canWrite()) return;
       const id = state.counterToastRecordId;
       if (!id) return;
       const record = state.counterRecords.find((entry) => entry.id === id);
@@ -2813,7 +2787,7 @@
 
     function openCounter() {
       if (isNewModalOpen()) closeModal({ returnFocus: false });
-      if (isHelpOpen()) closeHelp({ returnFocus: false });
+      if (isDailyOpen()) closeDaily({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCheckinOpen()) closeCheckin({ returnFocus: false });
       els.counterBackdrop.classList.add("open");
@@ -2832,13 +2806,18 @@
     }
 
     async function loadCounterData() {
+      if (state.readOnly) {
+        state.counterRecords = [];
+        renderCounterView();
+        return;
+      }
       const range = counterDateRange();
       els.counterSummary.innerHTML = '<div class="counter-empty">统计加载中...</div>';
       try {
         const data = await apiGet(`/api/counters?today=${state.today}&from=${range.from}&to=${range.to}`);
         const previousTotals = new Map(state.counterItems.map((item) => [item.id, Number(item.todayTotal) || 0]));
         state.counterRecords = Array.isArray(data.records) ? data.records : [];
-        state.counterItems = (Array.isArray(data.items) ? data.items : []).map((item) => ({ ...item, todayTotal: previousTotals.get(item.id) || 0 }));
+        state.counterItems = (Array.isArray(data.items) ? data.items : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1, todayTotal: previousTotals.get(item.id) || 0 }));
         if (range.from <= state.today && range.to >= state.today) {
           for (const item of state.counterItems) {
             item.todayTotal = state.counterRecords.filter((record) => record.itemId === item.id && record.recordedDate === state.today).reduce((sum, record) => sum + Number(record.amount || 0), 0);
@@ -2858,6 +2837,7 @@
       const range = counterDateRange();
       els.counterRangeLabel.textContent = range.label;
       els.counterPeriods.querySelectorAll("[data-period]").forEach((button) => button.classList.toggle("active", button.dataset.period === state.counterPeriod));
+      els.counterChartModes.querySelectorAll("[data-chart-mode]").forEach((button) => button.classList.toggle("active", button.dataset.chartMode === state.counterChartMode));
       renderCounterFilters();
       renderCounterSummary();
       renderCounterCharts();
@@ -2872,7 +2852,8 @@
       const selectedCount = state.counterSelectedIds.length;
       els.counterFilters.innerHTML = `<div class="counter-sidebar-title">显示记录项</div><div class="counter-filter-actions"><span>已选择 ${selectedCount} / ${state.counterItems.length}</span><button type="button" data-counter-select-all>${selectedCount === state.counterItems.length ? "清空" : "全选"}</button></div>` + state.counterItems.map((item) => {
         const checked = state.counterSelectedIds.includes(item.id);
-        return `<div class="counter-filter-row"><button class="counter-check ${checked ? "checked" : ""}" type="button" data-counter-toggle="${escapeHtml(item.id)}">${checked ? "✓" : ""}</button><i class="counter-filter-dot" style="--counter-color:${escapeHtml(item.color)}"></i><span class="counter-filter-name">${escapeHtml(item.name)}</span><span class="counter-unit-pill">${escapeHtml(item.unit)}</span><div class="counter-item-actions"><button type="button" data-counter-edit="${escapeHtml(item.id)}">编辑</button><button type="button" data-counter-archive="${escapeHtml(item.id)}">删除</button></div></div>`;
+        const writeDisabled = state.readOnly ? " disabled" : "";
+        return `<div class="counter-filter-row"><button class="counter-check ${checked ? "checked" : ""}" type="button" data-counter-toggle="${escapeHtml(item.id)}">${checked ? "✓" : ""}</button><i class="counter-filter-dot" style="--counter-color:${escapeHtml(item.color)}"></i><span class="counter-filter-name">${escapeHtml(item.name)}</span><button class="counter-quick-add" type="button" data-counter-add="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color)}" title="今天记录 1 次" aria-label="记录一次：${escapeHtml(item.name)}"${writeDisabled}>+1</button><div class="counter-item-actions"><button type="button" data-counter-edit="${escapeHtml(item.id)}"${writeDisabled}>编辑</button><button type="button" data-counter-archive="${escapeHtml(item.id)}"${writeDisabled}>删除</button></div></div>`;
       }).join("");
     }
 
@@ -2881,6 +2862,13 @@
       if (all) {
         state.counterSelectedIds = state.counterSelectedIds.length === state.counterItems.length ? [] : state.counterItems.map((item) => item.id);
         renderCounterView();
+        return;
+      }
+      const add = event.target.closest("[data-counter-add]");
+      if (add) {
+        if (!canWrite()) return;
+        add.disabled = true;
+        void recordCounterQuick(add.dataset.counterAdd);
         return;
       }
       const toggle = event.target.closest("[data-counter-toggle]");
@@ -2892,11 +2880,12 @@
       }
       const edit = event.target.closest("[data-counter-edit]");
       if (edit) {
+        if (!canWrite()) return;
         openCounterItem(edit.dataset.counterEdit);
         return;
       }
       const archive = event.target.closest("[data-counter-archive]");
-      if (archive) void archiveCounterItem(archive.dataset.counterArchive);
+      if (archive && canWrite()) void archiveCounterItem(archive.dataset.counterArchive);
     }
 
     function handleCounterPeriodClick(event) {
@@ -2905,6 +2894,14 @@
       state.counterPeriod = button.dataset.period;
       state.counterCursor = state.today;
       void loadCounterData();
+    }
+
+    function handleCounterChartModeClick(event) {
+      const button = event.target.closest("[data-chart-mode]");
+      if (!button || button.dataset.chartMode === state.counterChartMode) return;
+      state.counterChartMode = button.dataset.chartMode;
+      saveCounterChartMode();
+      renderCounterView();
     }
 
     function moveCounterPeriod(direction) {
@@ -2948,7 +2945,7 @@
       els.counterSummary.innerHTML = items.slice(0, 3).map((item) => {
         const records = selectedCounterRecords().filter((record) => record.itemId === item.id);
         const total = records.reduce((sum, record) => sum + Number(record.amount || 0), 0);
-        return `<div class="counter-summary"><div class="counter-summary-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}</div><div class="counter-summary-value">${escapeHtml(formatCounterValue(total, item.unit))}</div><div class="counter-summary-sub">${records.length} 条记录</div></div>`;
+        return `<div class="counter-summary"><div class="counter-summary-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}</div><div class="counter-summary-value">${escapeHtml(formatCounterValue(total))}</div><div class="counter-summary-sub">${records.length} 条记录</div></div>`;
       }).join("");
     }
 
@@ -2961,17 +2958,69 @@
       }
       const range = counterDateRange();
       const buckets = buildCounterBuckets(range);
-      els.counterCharts.innerHTML = items.map((item) => {
-        const values = buckets.map((bucket) => records.filter((record) => record.itemId === item.id && counterRecordBucket(record, range) === bucket.key).reduce((sum, record) => sum + Number(record.amount || 0), 0));
-        const maximum = Math.max(0, ...values);
-        const bars = buckets.map((bucket, bucketIndex) => {
-          const value = values[bucketIndex];
-          const height = maximum > 0 ? Math.max(value > 0 ? 2 : 0, value / maximum * 100) : 0;
-          return `<div class="counter-bar-group"><i class="counter-bar" title="${escapeHtml(item.name)} ${escapeHtml(formatCounterValue(value, item.unit))}" style="height:${height}%;--counter-color:${escapeHtml(item.color)}"></i><span class="counter-bar-label">${escapeHtml(bucket.label)}</span></div>`;
-        }).join("");
-        const axisMax = maximum || 1;
-        return `<section class="counter-panel" data-counter-chart-item="${escapeHtml(item.id)}"><div class="counter-panel-head"><h3><i class="counter-record-dot" style="--counter-color:${escapeHtml(item.color)}"></i>${escapeHtml(item.name)}（${escapeHtml(item.unit)}）</h3></div><div class="counter-chart"><div class="counter-y-axis"><span>${escapeHtml(formatCounterAmount(axisMax))}</span><span>${escapeHtml(formatCounterAmount(axisMax / 2))}</span><span>0</span></div><div class="counter-plot"><i class="counter-gridline" style="top:0"></i><i class="counter-gridline" style="top:50%"></i><div class="counter-bars" style="--bucket-count:${buckets.length}">${bars}</div></div></div></section>`;
-      }).join("");
+      const series = items.map((item) => ({
+        name: item.name,
+        color: item.color,
+        values: buckets.map((bucket) => records.filter((record) => record.itemId === item.id && counterRecordBucket(record, range) === bucket.key).reduce((sum, record) => sum + Number(record.amount || 0), 0)),
+      }));
+      if (state.counterChartMode === "compare") {
+        els.counterCharts.innerHTML = renderCounterPieChart(series);
+        return;
+      }
+      if (state.counterChartMode === "sum") {
+        const values = buckets.map((bucket, index) => series.reduce((sum, entry) => sum + entry.values[index], 0));
+        els.counterCharts.innerHTML = renderCounterChartPanel({
+          key: "sum",
+          title: "合计（次）",
+          subtitle: items.map((item) => item.name).join("、"),
+          series: [{ name: "合计", color: "#256d85", values }],
+          buckets,
+        });
+        return;
+      }
+      els.counterCharts.innerHTML = series.map((entry, index) => renderCounterChartPanel({
+        key: `item-${items[index].id}`,
+        itemId: items[index].id,
+        title: `${entry.name}（次）`,
+        series: [entry],
+        buckets,
+      })).join("");
+    }
+
+    function renderCounterChartPanel({ key, itemId = "", title, subtitle = "", series, buckets }) {
+      const maximum = Math.max(0, ...series.flatMap((entry) => entry.values));
+      const bars = buckets.map((bucket, bucketIndex) => `<div class="counter-bar-group">${series.map((entry) => {
+        const value = entry.values[bucketIndex];
+        const height = maximum > 0 ? Math.max(value > 0 ? 2 : 0, value / maximum * 100) : 0;
+        return `<i class="counter-bar" title="${escapeHtml(entry.name)} ${escapeHtml(formatCounterValue(value))}" style="height:${height}%;--counter-color:${escapeHtml(entry.color)}"></i>`;
+      }).join("")}<span class="counter-bar-label">${escapeHtml(bucket.label)}</span></div>`).join("");
+      const axisMax = maximum || 1;
+      const single = series.length === 1 ? series[0] : null;
+      const heading = `${single ? `<i class="counter-record-dot" style="--counter-color:${escapeHtml(single.color)}"></i>` : ""}${escapeHtml(title)}`;
+      const legend = series.length > 1 ? `<div class="counter-legend">${series.map((entry) => `<span><i class="counter-record-dot" style="--counter-color:${escapeHtml(entry.color)}"></i>${escapeHtml(entry.name)}</span>`).join("")}</div>` : "";
+      const itemAttribute = itemId ? ` data-counter-chart-item="${escapeHtml(itemId)}"` : "";
+      return `<section class="counter-panel" data-counter-chart-mode="${escapeHtml(key)}"${itemAttribute}><div class="counter-panel-head"><div><h3>${heading}</h3>${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}</div>${legend}</div><div class="counter-chart"><div class="counter-y-axis"><span>${escapeHtml(formatCounterAmount(axisMax))}</span><span>${escapeHtml(formatCounterAmount(axisMax / 2))}</span><span>0</span></div><div class="counter-plot"><i class="counter-gridline" style="top:0"></i><i class="counter-gridline" style="top:50%"></i><div class="counter-bars" style="--bucket-count:${buckets.length}">${bars}</div></div></div></section>`;
+    }
+
+    function renderCounterPieChart(series) {
+      const entries = series.map((entry) => ({
+        ...entry,
+        total: entry.values.reduce((sum, value) => sum + Number(value || 0), 0),
+      }));
+      const total = entries.reduce((sum, entry) => sum + entry.total, 0);
+      if (total <= 0) {
+        return '<section class="counter-panel" data-counter-chart-mode="compare"><div class="counter-panel-head"><div><h3>对比（次）</h3></div></div><div class="counter-empty">这个时间范围还没有可对比的记录</div></section>';
+      }
+      let progress = 0;
+      const slices = entries.filter((entry) => entry.total > 0).map((entry, index, positiveEntries) => {
+        const start = progress;
+        progress += entry.total / total * 100;
+        const end = index === positiveEntries.length - 1 ? 100 : progress;
+        return `${counterChartColor(entry.color)} ${start}% ${end}%`;
+      });
+      const details = entries.map((entry) => `${entry.name} ${formatCounterValue(entry.total)} ${formatCounterPercentage(entry.total / total * 100)}`).join("，");
+      const legend = entries.map((entry) => `<div class="counter-pie-legend-row" role="listitem"><span class="counter-pie-legend-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(counterChartColor(entry.color))}"></i><b>${escapeHtml(entry.name)}</b></span><strong class="counter-pie-legend-value">${escapeHtml(formatCounterValue(entry.total))}</strong><span class="counter-pie-legend-percent">${escapeHtml(formatCounterPercentage(entry.total / total * 100))}</span></div>`).join("");
+      return `<section class="counter-panel" data-counter-chart-mode="compare"><div class="counter-panel-head"><div><h3>对比（次）</h3></div></div><div class="counter-pie-layout"><div class="counter-pie" data-counter-pie role="img" aria-label="对比：总计 ${escapeHtml(formatCounterValue(total))}，${escapeHtml(details)}" style="--counter-pie-background:conic-gradient(${slices.join(",")})"><div class="counter-pie-total"><strong>${escapeHtml(formatCounterValue(total))}</strong><span>总计</span></div></div><div class="counter-pie-legend" role="list">${legend}</div></div></section>`;
     }
 
     function renderCounterRecords() {
@@ -2990,7 +3039,7 @@
 
     async function handleCounterRecordListClick(event) {
       const button = event.target.closest("[data-counter-record-delete]");
-      if (!button || !window.confirm("删除这条累计记录？")) return;
+      if (!button || !canWrite() || !window.confirm("删除这条累计记录？")) return;
       try {
         await apiPost("/api/counter-records/delete", { id: button.dataset.counterRecordDelete });
         await refresh();
@@ -3033,13 +3082,11 @@
     }
 
     function openCounterItem(itemId = "") {
+      if (!canWrite()) return;
       const item = state.counterItems.find((entry) => entry.id === itemId);
       els.counterItemId.value = item?.id || "";
       els.counterItemTitle.textContent = item ? "编辑记录项" : "新建记录项";
       els.counterItemName.value = item?.name || "";
-      els.counterItemIncrement.value = Number(item?.incrementValue) || 1;
-      els.counterItemUnit.value = item?.unit || "次";
-      state.counterItemKind = item && COUNTER_KINDS.includes(item.kind) ? item.kind : (item ? "custom" : "count");
       state.counterItemPinned = item ? Boolean(Number(item.pinned)) : true;
       els.counterItemColor.value = item?.color || COUNTER_COLORS[0];
       renderCounterItemFormState();
@@ -3052,15 +3099,8 @@
       if (options.returnFocus !== false && isCounterOpen()) els.openCounterItem.focus();
     }
 
-    function handleCounterKindClick(event) {
-      const button = event.target.closest("[data-kind]");
-      if (!button) return;
-      state.counterItemKind = button.dataset.kind;
-      els.counterItemUnit.value = counterDefaultUnit(state.counterItemKind);
-      renderCounterItemFormState();
-    }
-
     function handleCounterColorClick(event) {
+      if (!canWrite()) return;
       const button = event.target.closest("[data-color]");
       if (!button) return;
       els.counterItemColor.value = button.dataset.color;
@@ -3068,12 +3108,12 @@
     }
 
     function toggleCounterPinned() {
+      if (!canWrite()) return;
       state.counterItemPinned = !state.counterItemPinned;
       renderCounterItemFormState();
     }
 
     function renderCounterItemFormState() {
-      els.counterKinds.querySelectorAll("[data-kind]").forEach((button) => button.classList.toggle("active", button.dataset.kind === state.counterItemKind));
       els.counterColors.querySelectorAll("[data-color]").forEach((button) => button.classList.toggle("active", button.dataset.color === els.counterItemColor.value));
       els.counterItemPinned.classList.toggle("active", state.counterItemPinned);
       els.counterItemPinned.setAttribute("aria-pressed", String(state.counterItemPinned));
@@ -3081,13 +3121,14 @@
 
     async function submitCounterItem(event) {
       event.preventDefault();
+      if (!canWrite()) return;
       const name = els.counterItemName.value.trim();
       if (!name) {
         els.counterItemName.focus();
         return;
       }
       const id = els.counterItemId.value;
-      const payload = { id, name, kind: state.counterItemKind, unit: els.counterItemUnit.value, incrementValue: Number(els.counterItemIncrement.value), color: els.counterItemColor.value, pinned: state.counterItemPinned };
+      const payload = { id, name, color: els.counterItemColor.value, pinned: state.counterItemPinned };
       try {
         const saved = await apiPost(id ? "/api/counter-items/update" : "/api/counter-items", payload);
         if (!id && saved?.id) state.counterSelectedIds = state.counterSelectedIds.concat(saved.id);
@@ -3101,6 +3142,7 @@
     }
 
     async function archiveCounterItem(id) {
+      if (!canWrite()) return;
       const item = state.counterItems.find((entry) => entry.id === id);
       if (!item || !window.confirm(`删除“${item.name}”？删除后不再显示这个记录项，但历史记录仍然保留。`)) return;
       try {
@@ -3115,6 +3157,7 @@
     }
 
     function openCounterRecord() {
+      if (!canWrite()) return;
       if (!state.counterItems.length) {
         openCounterItem();
         return;
@@ -3135,8 +3178,7 @@
     function renderCounterRecordTabs() {
       els.counterRecordTabs.innerHTML = state.counterItems.map((item) => {
         const active = item.id === state.counterCalendarItemId;
-        const increment = formatCounterValue(Number(item.incrementValue) || 1, item.unit);
-        return `<button class="counter-record-tab ${active ? "active" : ""}" type="button" role="tab" aria-selected="${active}" data-counter-record-item="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color)}">${escapeHtml(item.name)} · +${escapeHtml(increment)}</button>`;
+        return `<button class="counter-record-tab ${active ? "active" : ""}" type="button" role="tab" aria-selected="${active}" data-counter-record-item="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color)}">${escapeHtml(item.name)} · +1次</button>`;
       }).join("");
     }
 
@@ -3149,6 +3191,7 @@
     }
 
     async function loadCounterCalendar() {
+      if (state.readOnly) return;
       const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId) || state.counterItems[0];
       if (!item) return;
       state.counterCalendarItemId = item.id;
@@ -3171,11 +3214,10 @@
     function renderCounterCalendar() {
       const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId);
       if (!item) return;
-      const increment = Number(item.incrementValue) || 1;
       const range = counterCalendarRange();
       const month = parseDate(range.from);
       els.counterRecordTitle.textContent = `补记 · ${item.name}`;
-      els.counterCalendarSummary.textContent = `${item.name}每点击一次增加 ${formatCounterValue(increment, item.unit)}，可以连续点击同一天。`;
+      els.counterCalendarSummary.textContent = `${item.name}每点击一次增加 1次，可以连续点击同一天。`;
       els.counterCalendarMonthLabel.textContent = `${month.getFullYear()}年${month.getMonth() + 1}月`;
       els.counterCalendarNext.disabled = range.from >= state.today.slice(0, 7) + "-01";
       if (state.counterCalendarLoading) {
@@ -3193,8 +3235,8 @@
         const date = `${range.from.slice(0, 8)}${String(day).padStart(2, "0")}`;
         const total = totals.get(date) || 0;
         const disabled = date > state.today;
-        const totalText = disabled ? "" : (total > 0 ? `已记 ${formatCounterValue(total, item.unit)}` : `+${formatCounterValue(increment, item.unit)}`);
-        const title = disabled ? `${date}，未来日期不能补记` : `${date}，点击增加 ${formatCounterValue(increment, item.unit)}`;
+        const totalText = disabled ? "" : (total > 0 ? `已记 ${formatCounterValue(total)}` : "+1次");
+        const title = disabled ? `${date}，未来日期不能补记` : `${date}，点击增加 1次`;
         cells.push(`<button class="counter-calendar-day ${date === state.today ? "today" : ""} ${total > 0 ? "has-records" : ""}" type="button" data-counter-calendar-date="${date}" ${disabled ? "disabled" : ""} title="${escapeHtml(title)}"><span class="counter-calendar-date">${month.getMonth() + 1}/${day}</span><span class="counter-calendar-total">${escapeHtml(totalText)}</span></button>`);
       }
       els.counterCalendarGrid.innerHTML = cells.join("");
@@ -3218,12 +3260,11 @@
 
     async function handleCounterCalendarClick(event) {
       const button = event.target.closest("[data-counter-calendar-date]");
-      if (!button || button.disabled || state.counterCalendarLoading) return;
+      if (!button || !canWrite() || button.disabled || state.counterCalendarLoading) return;
       const item = state.counterItems.find((entry) => entry.id === state.counterCalendarItemId);
       if (!item) return;
       button.disabled = true;
       const record = await recordCounterQuick(item.id, {
-        amount: Number(item.incrementValue) || 1,
         recordedDate: button.dataset.counterCalendarDate,
       });
       if (!record) {
@@ -3234,26 +3275,23 @@
       renderCounterCalendar();
     }
 
-    function counterDefaultUnit(kind) {
-      return { count: "次", duration: "小时", distance: "公里", custom: "单位" }[kind] || "次";
-    }
-
     function formatCounterAmount(value) {
       const rounded = Math.round((Number(value) || 0) * 100) / 100;
       return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, "").replace(/\.$/, "");
     }
 
-    function formatCounterValue(value, unit) {
-      const amount = Number(value) || 0;
-      if (unit === "小时") {
-        const minutes = Math.round(amount * 60);
-        const hours = Math.floor(minutes / 60);
-        const rest = minutes % 60;
-        if (hours && rest) return `${hours}小时${rest}分钟`;
-        if (hours) return `${hours}小时`;
-        return `${rest}分钟`;
-      }
-      return `${formatCounterAmount(amount)} ${unit || "单位"}`;
+    function formatCounterPercentage(value) {
+      const rounded = Math.round((Number(value) || 0) * 10) / 10;
+      return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+    }
+
+    function counterChartColor(value) {
+      const color = String(value || "");
+      return /^#[0-9a-f]{6}$/i.test(color) ? color : "#256d85";
+    }
+
+    function formatCounterValue(value) {
+      return `${formatCounterAmount(value)}次`;
     }
 
     function formatCounterRecordTime(record) {
@@ -3334,16 +3372,21 @@
       if (todo.id === state.draggingId) row.classList.add("dragging");
       if (isEditing) row.classList.add("editing");
       row.dataset.id = todo.id;
-      row.draggable = !isEditing;
+      row.draggable = !state.readOnly && !isEditing;
       row.tabIndex = -1;
       row.addEventListener("click", (event) => {
         if (!event.target.closest(".checkbox") && !event.target.closest(".todo-input") && !event.target.closest(".todo-action")) selectTodo(todo.id);
       });
       row.addEventListener("dblclick", (event) => {
+        if (!canWrite()) return;
         if (event.target.closest(".checkbox") || event.target.closest(".todo-input") || event.target.closest(".todo-action")) return;
         startEditingTodo(todo);
       });
       row.addEventListener("dragstart", (event) => {
+        if (!canWrite()) {
+          event.preventDefault();
+          return;
+        }
         state.draggingId = todo.id;
         row.classList.add("dragging");
         event.dataTransfer.effectAllowed = "move";
@@ -3357,6 +3400,7 @@
       const checkbox = document.createElement("button");
       checkbox.className = "checkbox";
       checkbox.type = "button";
+      checkbox.disabled = state.readOnly;
       checkbox.title = "完成（Space）";
       checkbox.setAttribute("aria-label", "完成：" + todo.text);
       checkbox.addEventListener("click", (event) => {
@@ -3416,6 +3460,7 @@
       const pinTop = document.createElement("button");
       pinTop.className = "todo-action";
       pinTop.type = "button";
+      pinTop.disabled = state.readOnly;
       pinTop.title = "置顶（1）";
       pinTop.setAttribute("aria-label", "置顶：" + todo.text);
       pinTop.innerHTML = `
@@ -3433,6 +3478,7 @@
       const pinBottom = document.createElement("button");
       pinBottom.className = "todo-action";
       pinBottom.type = "button";
+      pinBottom.disabled = state.readOnly;
       pinBottom.title = "置底（2）";
       pinBottom.setAttribute("aria-label", "置底：" + todo.text);
       pinBottom.innerHTML = `
@@ -3466,26 +3512,46 @@
         const item = document.createElement("li");
         item.className = "daily-row";
 
+        const main = document.createElement("div");
+        main.className = "daily-main";
+
         const text = document.createElement("div");
         text.className = "daily-task-text";
-        text.textContent = task.text;
+        text.textContent = stripDailyTaskPrefix(task.text);
 
         const count = document.createElement("button");
         count.className = "daily-count-button";
         count.type = "button";
+        count.disabled = state.readOnly;
         count.dataset.taskId = task.id;
         count.textContent = formatDailyTaskStats(task);
         count.title = "补打卡";
-        count.setAttribute("aria-label", "补打卡：" + task.text + "，" + count.textContent.trim());
+        count.setAttribute("aria-label", "补打卡：" + stripDailyTaskPrefix(task.text) + "，" + count.textContent.trim());
         count.addEventListener("click", () => openCheckin(task));
+
+        main.appendChild(text);
+        main.appendChild(count);
 
         const actions = document.createElement("div");
         actions.className = "daily-actions";
 
+        const edit = createDailyActionButton({
+          className: "daily-edit",
+          title: "编辑每日任务",
+          label: "编辑每日任务：" + stripDailyTaskPrefix(task.text),
+          icon: `
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+            </svg>
+          `,
+          onClick: () => startEditingDailyTask(task),
+        });
+
         const top = createDailyActionButton({
           className: "daily-action" + ((task.placement || "top") === "top" ? " active" : ""),
           title: "每日任务置顶",
-          label: "每日任务置顶：" + task.text,
+          label: "每日任务置顶：" + stripDailyTaskPrefix(task.text),
           icon: `
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 18V6"></path>
@@ -3499,7 +3565,7 @@
         const bottom = createDailyActionButton({
           className: "daily-action" + ((task.placement || "top") === "bottom" ? " active" : ""),
           title: "每日任务置底",
-          label: "每日任务置底：" + task.text,
+          label: "每日任务置底：" + stripDailyTaskPrefix(task.text),
           icon: `
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 6v12"></path>
@@ -3513,8 +3579,9 @@
         const remove = document.createElement("button");
         remove.className = "daily-delete";
         remove.type = "button";
+        remove.disabled = state.readOnly;
         remove.title = "删除每日任务";
-        remove.setAttribute("aria-label", "删除每日任务：" + task.text);
+        remove.setAttribute("aria-label", "删除每日任务：" + stripDailyTaskPrefix(task.text));
         remove.innerHTML = `
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6h18"></path>
@@ -3526,8 +3593,8 @@
         `;
         remove.addEventListener("click", () => deleteDailyTask(task));
 
-        item.appendChild(text);
-        item.appendChild(count);
+        item.appendChild(main);
+        actions.appendChild(edit);
         actions.appendChild(top);
         actions.appendChild(bottom);
         actions.appendChild(remove);
@@ -3540,6 +3607,7 @@
       const button = document.createElement("button");
       button.className = className;
       button.type = "button";
+      button.disabled = state.readOnly;
       button.title = title;
       button.setAttribute("aria-label", label);
       button.innerHTML = icon;
@@ -3568,6 +3636,11 @@
     }
 
     async function loadCompletedTodos() {
+      if (state.readOnly) {
+        state.completedTodos = [];
+        renderCompletedList("缓存模式下仅显示已完成数量，完成同步后可查看明细");
+        return;
+      }
       setStatus("读取已完成...");
       try {
         const data = await apiGet(`/api/completed?today=${state.today}&limit=100`);
@@ -3619,6 +3692,7 @@
         const restore = document.createElement("button");
         restore.className = "restore-button";
         restore.type = "button";
+        restore.disabled = state.readOnly;
         restore.textContent = "恢复";
         restore.title = "恢复为未完成";
         restore.setAttribute("aria-label", "恢复：" + todo.text);
@@ -3633,7 +3707,7 @@
     }
 
     async function restoreCompletedTodo(id) {
-      if (!id || state.loading) return;
+      if (!id || !canWrite() || state.loading) return;
       setStatus("恢复中...");
       state.loading = true;
       try {
@@ -3654,20 +3728,22 @@
 
     function handleKeys(event) {
       const newModalOpen = isNewModalOpen();
-      const helpModalOpen = isHelpOpen();
+      const dailyModalOpen = isDailyOpen();
       const checkinOpen = isCheckinOpen();
       const completedOpen = isCompletedOpen();
       const counterOpen = isCounterOpen();
       const counterItemOpen = isCounterItemOpen();
       const counterRecordOpen = isCounterRecordOpen();
-      if (event.altKey && /^[123]$/.test(event.key) && !newModalOpen && !helpModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+      if (event.altKey && /^[123]$/.test(event.key) && !newModalOpen && !dailyModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
+        if (!canWrite()) return;
         const item = state.counterItems.filter((entry) => Number(entry.pinned)).sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))[Number(event.key) - 1];
         if (item) void recordCounterQuick(item.id);
         return;
       }
-      if (event.altKey && event.key.toLowerCase() === "n" && !helpModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+      if (event.altKey && event.key.toLowerCase() === "n" && !dailyModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
+        if (!canWrite()) return;
         openModal();
         return;
       }
@@ -3681,9 +3757,9 @@
         closeCompleted();
         return;
       }
-      if (event.key === "Escape" && helpModalOpen) {
+      if (event.key === "Escape" && dailyModalOpen) {
         event.preventDefault();
-        closeHelp();
+        closeDaily();
         return;
       }
       if (event.key === "Escape" && newModalOpen) {
@@ -3706,7 +3782,7 @@
         closeCounter();
         return;
       }
-      if (newModalOpen || helpModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
+      if (newModalOpen || dailyModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
       if (isTextEntryTarget(event.target) || state.editingId) return;
       const isPinShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "1" || event.code === "Numpad1");
       const isBottomShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "2" || event.code === "Numpad2");
@@ -3716,11 +3792,11 @@
       }
       if (event.key === "ArrowUp") moveSelection(-1);
       if (event.key === "ArrowDown") moveSelection(1);
-      if (event.key === "ArrowLeft" && selectedTodoId()) moveSelectedTodo("up");
-      if (event.key === "ArrowRight" && selectedTodoId()) moveSelectedTodo("down");
-      if (event.key === " ") activateSelected();
-      if (isPinShortcut) moveTodoToEdge(selectedTodoId(), "top");
-      if (isBottomShortcut) moveTodoToEdge(selectedTodoId(), "bottom");
+      if (event.key === "ArrowLeft" && selectedTodoId() && canWrite()) moveSelectedTodo("up");
+      if (event.key === "ArrowRight" && selectedTodoId() && canWrite()) moveSelectedTodo("down");
+      if (event.key === " " && (isSelectedGroup() || canWrite())) activateSelected();
+      if (isPinShortcut && canWrite()) moveTodoToEdge(selectedTodoId(), "top");
+      if (isBottomShortcut && canWrite()) moveTodoToEdge(selectedTodoId(), "bottom");
       if (isCollapseShortcut) collapseSelectedTodoGroup();
     }
 
@@ -3751,7 +3827,7 @@
 
     async function moveSelectedTodo(direction) {
       const id = selectedTodoId();
-      if (!id || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.loading || state.editingId) return;
       optimisticallyMove(id, direction);
       render();
       try {
@@ -3764,7 +3840,7 @@
     }
 
     async function moveTodoToEdge(id, edge) {
-      if (!id || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.loading || state.editingId) return;
       selectTodo(id, { renderNow: false });
       optimisticallyMoveToEdge(id, edge);
       render();
@@ -3778,7 +3854,7 @@
     }
 
     async function completeSelected(id) {
-      if (!id || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.loading || state.editingId) return;
       const items = navigationItems();
       const currentIndex = Math.max(0, items.findIndex((item) => item.type === "todo" && item.id === id));
       const fallback = items[currentIndex + 1] || items[currentIndex - 1] || null;
@@ -3814,6 +3890,7 @@
 
     async function submitNewItem(event) {
       event.preventDefault();
+      if (!canWrite()) return;
       const parsed = parseAutomaticNewItem(els.newText.value);
       const text = parsed.text;
       const target = parsed.type || parsed.dueDate || els.dateSelect.value;
@@ -3829,9 +3906,6 @@
         } else if (target === "counter") {
           await apiPost("/api/counter-items", {
             name: text,
-            kind: "count",
-            unit: "次",
-            incrementValue: 1,
             pinned: true,
             color: COUNTER_COLORS[0],
           });
@@ -3915,8 +3989,55 @@
       return "";
     }
 
+    async function submitDailyTask(event) {
+      event.preventDefault();
+      if (!canWrite() || state.loading) return;
+      const text = normalizeTodoText(els.dailyText.value);
+      if (!text) {
+        els.dailyText.focus();
+        return;
+      }
+
+      const editingId = state.dailyEditingId;
+      setStatus(editingId ? "保存中..." : "创建中...");
+      state.loading = true;
+      try {
+        if (editingId) {
+          await apiPost("/api/daily-tasks/update", { id: editingId, text });
+        } else {
+          await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
+        }
+        cancelDailyTaskEdit({ focus: false });
+        await refresh({ preferId: selectedTodoId() });
+        els.dailyText.focus();
+      } catch (error) {
+        setStatus((editingId ? "保存失败：" : "创建失败：") + error.message, true);
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    function startEditingDailyTask(task) {
+      if (!task || !canWrite() || state.loading) return;
+      state.dailyEditingId = task.id;
+      els.dailyText.value = stripDailyTaskPrefix(task.text);
+      els.dailySubmit.textContent = "保存";
+      els.cancelDailyEdit.hidden = false;
+      els.dailyText.focus();
+      els.dailyText.select();
+    }
+
+    function cancelDailyTaskEdit(options = {}) {
+      state.dailyEditingId = null;
+      els.dailyText.value = "";
+      els.dailySubmit.textContent = "新建";
+      els.cancelDailyEdit.hidden = true;
+      if (options.focus !== false && isDailyOpen()) els.dailyText.focus();
+    }
+
     async function deleteDailyTask(task) {
-      if (state.loading) return;
+      if (!canWrite() || state.loading) return;
+      if (state.dailyEditingId === task.id) cancelDailyTaskEdit({ focus: false });
       setStatus("删除中...");
       try {
         await apiPost("/api/daily-tasks/delete", { id: task.id });
@@ -3927,7 +4048,7 @@
     }
 
     async function updateDailyTaskPlacement(task, placement) {
-      if (!task || state.loading) return;
+      if (!task || !canWrite() || state.loading) return;
       const normalized = placement === "bottom" ? "bottom" : "top";
       if ((task.placement || "top") === normalized) return;
       const current = state.dailyTasks.find((item) => item.id === task.id);
@@ -3947,11 +4068,11 @@
     }
 
     function openModal() {
-      if (isHelpOpen()) closeHelp({ returnFocus: false });
+      if (!canWrite()) return;
+      if (isDailyOpen()) closeDaily({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
       renderDateOptions();
-      renderDailyTasks();
       els.modalBackdrop.classList.add("open");
       window.setTimeout(() => {
         els.newText.focus();
@@ -3964,26 +4085,27 @@
       if (options.returnFocus !== false) els.openNew.focus();
     }
 
-    function openHelp() {
+    function openDaily() {
       if (isNewModalOpen()) closeModal({ returnFocus: false });
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
-      state.helpMode = "manual";
-      renderHelpContent();
-      els.helpBackdrop.classList.add("open");
+      cancelDailyTaskEdit({ focus: false });
+      renderDailyTasks();
+      els.dailyBackdrop.classList.add("open");
       window.setTimeout(() => {
-        els.toggleHelpMode.focus();
+        if (!state.readOnly) els.dailyText.focus();
       }, 0);
     }
 
-    function closeHelp(options = {}) {
-      els.helpBackdrop.classList.remove("open");
-      if (options.returnFocus !== false) els.openHelp.focus();
+    function closeDaily(options = {}) {
+      els.dailyBackdrop.classList.remove("open");
+      cancelDailyTaskEdit({ focus: false });
+      if (options.returnFocus !== false) els.openDaily.focus();
     }
 
     function openCompleted() {
       if (isNewModalOpen()) closeModal({ returnFocus: false });
-      if (isHelpOpen()) closeHelp({ returnFocus: false });
+      if (isDailyOpen()) closeDaily({ returnFocus: false });
       if (isCheckinOpen()) closeCheckin({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
       renderCompletedList();
@@ -4001,8 +4123,7 @@
     }
 
     function openCheckin(task) {
-      if (!task) return;
-      if (isHelpOpen()) closeHelp({ returnFocus: false });
+      if (!task || !canWrite()) return;
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
       state.checkinTaskId = task.id;
@@ -4030,7 +4151,7 @@
       if (!task) return;
 
       const startDate = task.startDate || state.today;
-      els.checkinTitle.textContent = task.text;
+      els.checkinTitle.textContent = stripDailyTaskPrefix(task.text);
       els.checkinSummary.textContent = `打卡统计：${formatDailyTaskStats(task)}，可补打卡范围：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`;
 
       for (const name of WEEKDAYS) {
@@ -4069,7 +4190,7 @@
     }
 
     async function toggleDailyCheckin(task, date, checked) {
-      if (!task || state.loading) return;
+      if (!task || !canWrite() || state.loading) return;
       const checkins = new Set(Array.isArray(task.checkins) ? task.checkins : []);
       if (checked) {
         checkins.add(date);
@@ -4096,55 +4217,12 @@
       }
     }
 
-    function toggleHelpMode() {
-      state.helpMode = state.helpMode === "manual" ? "prompt" : "manual";
-      renderHelpContent();
-    }
-
-    function renderHelpContent() {
-      const promptMode = state.helpMode === "prompt";
-      els.helpTitle.textContent = promptMode ? "Prompt版" : "使用说明";
-      els.helpSubtitle.textContent = promptMode ? "可直接喂给 AI 生成同款软件" : "按当前代码整理的操作与规则";
-      els.toggleHelpMode.textContent = promptMode ? "说明版" : "Prompt版";
-      els.toggleHelpMode.setAttribute("aria-pressed", promptMode ? "true" : "false");
-      els.helpContent.replaceChildren();
-
-      if (promptMode) {
-        const box = document.createElement("textarea");
-        box.className = "help-prompt-box";
-        box.readOnly = true;
-        box.setAttribute("aria-label", "Todo 软件 Prompt");
-        box.value = HELP_PROMPT;
-        els.helpContent.appendChild(box);
-        return;
-      }
-
-      for (const sectionData of HELP_MANUAL) {
-        const section = document.createElement("section");
-        section.className = "help-section";
-
-        const title = document.createElement("h3");
-        title.textContent = sectionData.title;
-
-        const list = document.createElement("ul");
-        for (const itemText of sectionData.items) {
-          const item = document.createElement("li");
-          item.textContent = itemText;
-          list.appendChild(item);
-        }
-
-        section.appendChild(title);
-        section.appendChild(list);
-        els.helpContent.appendChild(section);
-      }
-    }
-
     function isNewModalOpen() {
       return els.modalBackdrop.classList.contains("open");
     }
 
-    function isHelpOpen() {
-      return els.helpBackdrop.classList.contains("open");
+    function isDailyOpen() {
+      return els.dailyBackdrop.classList.contains("open");
     }
 
     function isCheckinOpen() {
@@ -4160,7 +4238,7 @@
     }
 
     function startEditingTodo(todo) {
-      if (!todo || state.loading) return;
+      if (!todo || !canWrite() || state.loading) return;
       endDrag();
       state.selected = todoSelection(todo.id);
       state.editingId = todo.id;
@@ -4176,6 +4254,7 @@
     }
 
     async function saveEditingTodo(id, originalText) {
+      if (!canWrite()) return;
       if (state.editingId !== id) return;
       const text = normalizeTodoText(state.editingText);
       clearEditingState();
@@ -4341,7 +4420,7 @@
     }
 
     function handleDragOver(event) {
-      if (!state.draggingId || state.editingId) return;
+      if (!canWrite() || !state.draggingId || state.editingId) return;
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
       const list = event.currentTarget;
@@ -4351,7 +4430,7 @@
 
     async function handleDrop(event) {
       event.preventDefault();
-      if (state.editingId) return;
+      if (!canWrite() || state.editingId) return;
       const id = event.dataTransfer.getData("text/plain") || state.draggingId;
       if (!id) return;
       const list = event.currentTarget;
@@ -4546,19 +4625,114 @@
       return String(value || "").trim().replace(/\s+/g, " ").slice(0, 240);
     }
 
+    function stripDailyTaskPrefix(value) {
+      return String(value || "").replace(/^（每日任务）/, "");
+    }
+
     function isDateString(value) {
       return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
     }
 
-    function setStatus(message, error = false) {
-      els.status.textContent = message;
+    function setStatus(message, error = false, options = {}) {
+      window.clearTimeout(setStatus.timer);
+      els.status.textContent = "";
+      const text = document.createElement("span");
+      text.textContent = message;
+      els.status.appendChild(text);
       els.status.classList.toggle("error", error);
+      els.status.classList.toggle("cache-status", Boolean(options.cache));
+      if (options.retry) {
+        const retry = document.createElement("button");
+        retry.className = "retry-sync";
+        retry.type = "button";
+        retry.textContent = "重试";
+        retry.addEventListener("click", () => void refresh({ initial: true }));
+        els.status.appendChild(retry);
+      }
       if (!error && message === "已同步") {
-        window.clearTimeout(setStatus.timer);
         setStatus.timer = window.setTimeout(() => {
           if (els.status.textContent === "已同步") els.status.textContent = "";
         }, 1400);
       }
+    }
+
+    function canWrite() {
+      return !state.readOnly;
+    }
+
+    function setReadOnly(readOnly) {
+      state.readOnly = Boolean(readOnly);
+      document.body.classList.toggle("read-only", state.readOnly);
+      updateInteractionState();
+    }
+
+    function updateInteractionState() {
+      if (!els.openNew) return;
+      els.openNew.disabled = state.readOnly;
+      els.openNew.title = state.readOnly ? "等待同步完成后可新建" : "新建（Alt+N）";
+      els.openNew.setAttribute("aria-label", state.readOnly ? "等待同步完成后可新建" : "新建待办事项");
+      els.dailySubmit.disabled = state.readOnly;
+      els.cancelDailyEdit.disabled = state.readOnly;
+      els.dailyText.disabled = state.readOnly;
+      els.dailyText.placeholder = state.readOnly ? "同步完成后可编辑每日任务" : "输入每日任务名称";
+      els.openCounterItem.disabled = state.readOnly;
+      els.openCounterRecord.disabled = state.readOnly;
+    }
+
+    function saveStateCache() {
+      try {
+        const payload = {
+          version: STATE_CACHE_VERSION,
+          savedAt: state.cacheSavedAt || new Date().toISOString(),
+          today: state.today,
+          days: DAY_COUNT,
+          todos: state.todos,
+          dailyTasks: state.dailyTasks,
+          completedCount: state.completedCount,
+          counterItems: state.counterItems,
+        };
+        localStorage.setItem(STATE_CACHE_KEY, JSON.stringify(payload));
+      } catch {
+        // Storage may be disabled or full; live synchronization still works.
+      }
+    }
+
+    function restoreStateCache() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STATE_CACHE_KEY) || "null");
+        if (!raw || raw.version !== STATE_CACHE_VERSION || !Array.isArray(raw.todos) || !Array.isArray(raw.dailyTasks)) return false;
+        const today = state.today;
+        const dailySourcesShownToday = new Set(raw.todos
+          .filter((todo) => todo.sourceDailyTaskId && todo.dueDate === today)
+          .map((todo) => todo.sourceDailyTaskId));
+        state.todos = raw.todos.flatMap((todo) => {
+          const copy = { ...todo };
+          if (copy.dueDate === SHOPPING_GROUP || (isDateString(copy.dueDate) && copy.dueDate >= today)) return [copy];
+          if (copy.sourceDailyTaskId) {
+            if (dailySourcesShownToday.has(copy.sourceDailyTaskId)) return [];
+            dailySourcesShownToday.add(copy.sourceDailyTaskId);
+          }
+          copy.dueDate = today;
+          return [copy];
+        });
+        state.dailyTasks = raw.dailyTasks;
+        state.completedCount = Number(raw.completedCount) || 0;
+        state.counterItems = (Array.isArray(raw.counterItems) ? raw.counterItems : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
+        state.cacheSavedAt = typeof raw.savedAt === "string" ? raw.savedAt : null;
+        state.cacheLoaded = true;
+        setReadOnly(true);
+        setStatus(`正在同步，当前显示${formatCacheAge(state.cacheSavedAt)}的缓存（只读）`, false, { cache: true });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function formatCacheAge(savedAt) {
+      if (!savedAt) return "上次";
+      const date = new Date(savedAt);
+      if (Number.isNaN(date.getTime())) return "上次";
+      return `上次同步于 ${date.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
     }
 
     async function apiGet(path) {
@@ -4597,6 +4771,15 @@
 
     function saveCollapsed() {
       localStorage.setItem("todo-collapsed-days", JSON.stringify(state.collapsed));
+    }
+
+    function loadCounterChartMode() {
+      const mode = localStorage.getItem("todo-counter-chart-mode");
+      return ["separate", "compare", "sum"].includes(mode) ? mode : "separate";
+    }
+
+    function saveCounterChartMode() {
+      localStorage.setItem("todo-counter-chart-mode", state.counterChartMode);
     }
 
     function isTextEntryTarget(target) {

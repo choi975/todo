@@ -62,6 +62,13 @@ export default {
         return json(await createDailyTask(env.DB, text, today, days));
       }
 
+      if (request.method === "POST" && path === "/api/daily-tasks/update") {
+        const body = await readJson(request);
+        const text = cleanText(body.text);
+        if (!text) return json({ error: "empty_text" }, 400);
+        return json(await updateDailyTask(env.DB, String(body.id || ""), text));
+      }
+
       if (request.method === "POST" && path === "/api/counter-items") {
         const body = await readJson(request);
         return json(await createCounterItem(env.DB, body));
@@ -225,9 +232,9 @@ async function createCounterItem(db, body) {
   await ensureSchema(db);
   const name = cleanCounterName(body.name);
   if (!name) throw new Error("empty_counter_name");
-  const kind = normalizeCounterKind(body.kind);
-  const unit = normalizeCounterUnit(body.unit, kind);
-  const incrementValue = normalizeCounterAmount(body.incrementValue, 1);
+  const kind = "count";
+  const unit = "次";
+  const incrementValue = 1;
   const color = normalizeCounterColor(body.color);
   const pinned = body.pinned ? 1 : 0;
   const id = crypto.randomUUID();
@@ -246,9 +253,9 @@ async function updateCounterItem(db, body) {
   if (!id) throw new Error("missing_counter_id");
   const name = cleanCounterName(body.name);
   if (!name) throw new Error("empty_counter_name");
-  const kind = normalizeCounterKind(body.kind);
-  const unit = normalizeCounterUnit(body.unit, kind);
-  const incrementValue = normalizeCounterAmount(body.incrementValue, 1);
+  const kind = "count";
+  const unit = "次";
+  const incrementValue = 1;
   const color = normalizeCounterColor(body.color);
   const pinned = body.pinned ? 1 : 0;
   const result = await db.prepare(
@@ -275,8 +282,7 @@ async function createCounterRecord(db, body) {
   const itemId = String(body.itemId || "");
   const item = await db.prepare(`SELECT id FROM counter_items WHERE id = ? AND active = 1`).bind(itemId).first();
   if (!item) throw new Error("counter_not_found");
-  const amount = normalizeCounterAmount(body.amount, 0);
-  if (amount <= 0) throw new Error("invalid_counter_amount");
+  const amount = 1;
   const recordedDate = normalizedDate(body.recordedDate);
   const recordedAt = normalizeRecordedAt(body.recordedAt);
   const id = crypto.randomUUID();
@@ -369,6 +375,45 @@ async function createDailyTask(db, text, today, days) {
     todoIds.push(await insertDailyInstance(db, schema, rawDailyTaskId, sourceDailyTaskId, dailyText, dueDate, dailyTaskMap));
   }
   return { id: sourceDailyTaskId, todoIds };
+}
+
+async function updateDailyTask(db, id, text) {
+  if (!id) return { ok: false };
+  const schema = await ensureSchema(db);
+  const rawDailyTaskId = normalizeDailyTaskId(schema, id);
+  const dailyText = normalizeDailyText(text);
+  const existing = await db.prepare(
+    `SELECT CAST(id AS TEXT) AS id
+     FROM daily_tasks
+     WHERE id = ? AND active = 1`
+  ).bind(rawDailyTaskId).first();
+  if (!existing) return { ok: false };
+
+  const operations = [
+    db.prepare(
+      `UPDATE daily_tasks
+       SET ${schema.dailyTasksTextColumn} = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND active = 1`
+    ).bind(dailyText, rawDailyTaskId),
+    db.prepare(
+      `UPDATE todos
+       SET text = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE source_daily_task_id = ? AND completed_at IS NULL`
+    ).bind(dailyText, id),
+  ];
+
+  if (schema.hasLegacyTasksTable) {
+    operations.push(
+      db.prepare(
+        `UPDATE tasks
+         SET title = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE daily_task_id = ? AND completed_at IS NULL`
+      ).bind(dailyText, rawDailyTaskId)
+    );
+  }
+
+  await db.batch(operations);
+  return { ok: true };
 }
 
 async function deleteDailyTask(db, id) {
@@ -973,6 +1018,12 @@ async function ensureSchema(db) {
      SET start_date = ?
      WHERE start_date IS NULL OR start_date = ''`
   ).bind(DAILY_COUNTER_START_DATE).run();
+  await db.prepare(
+    `UPDATE counter_items
+     SET kind = 'count', unit = '次', increment_value = 1, updated_at = CURRENT_TIMESTAMP
+     WHERE kind <> 'count' OR unit <> '次' OR increment_value <> 1`
+  ).run();
+  await db.prepare(`UPDATE counter_records SET amount = 1 WHERE amount <> 1`).run();
   return statements.length ? getSchemaInfo(db) : schema;
 }
 
@@ -1456,22 +1507,6 @@ function cleanText(value) {
 
 function cleanCounterName(value) {
   return cleanText(value).slice(0, 80);
-}
-
-function normalizeCounterKind(value) {
-  return ["count", "duration", "distance", "custom"].includes(value) ? value : "count";
-}
-
-function normalizeCounterUnit(value, kind) {
-  const fallback = { count: "次", duration: "小时", distance: "公里", custom: "单位" }[kind] || "单位";
-  const unit = cleanText(value).slice(0, 12);
-  return unit || fallback;
-}
-
-function normalizeCounterAmount(value, fallback) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return fallback;
-  return Math.round(amount * 1000) / 1000;
 }
 
 function normalizeCounterColor(value) {

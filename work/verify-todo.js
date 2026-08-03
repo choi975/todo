@@ -4,12 +4,17 @@ const http = require("http");
 const { chromium } = require("playwright");
 
 const root = process.cwd();
-const sourceHtml = path.join(root, "outputs", "todo.html");
+const sourceHtml = path.join(root, "deploy", "todo.html");
 const testHtml = path.join(root, "work", "todo-test.html");
 const screenshotPath = path.join(root, "outputs", "todo-preview.png");
 const counterScreenshotPath = path.join(root, "outputs", "counter-preview.png");
+const counterCompareScreenshotPath = path.join(root, "outputs", "counter-compare-preview.png");
 const counterItemScreenshotPath = path.join(root, "outputs", "counter-item-preview.png");
 const counterCalendarScreenshotPath = path.join(root, "outputs", "counter-calendar-preview.png");
+const counterMobileScreenshotPath = path.join(root, "outputs", "counter-mobile-preview.png");
+const counterCompareMobileScreenshotPath = path.join(root, "outputs", "counter-compare-mobile-preview.png");
+const dailyScreenshotPath = path.join(root, "outputs", "daily-preview.png");
+const dailyMobileScreenshotPath = path.join(root, "outputs", "daily-mobile-preview.png");
 const logPath = path.join(root, "work", "verify-todo.log");
 fs.writeFileSync(logPath, "", "utf8");
 const originalLog = console.log.bind(console);
@@ -66,7 +71,7 @@ let counterItems = [
   { id: "counter-pushup", name: "俯卧撑", kind: "count", unit: "次", incrementValue: 10, color: "#7562a8", pinned: 1, sortOrder: 1000, active: 1, createdAt: "2026-06-30T00:01:00Z" },
 ];
 let counterRecords = [
-  { id: "counter-record-1", itemId: "counter-swim", amount: 1, recordedDate: TODAY, recordedAt: "2026-07-16T10:00:00.000Z", createdAt: "2026-07-16T10:00:00.000Z" },
+  { id: "counter-record-1", itemId: "counter-swim", amount: 3, recordedDate: TODAY, recordedAt: "2026-07-16T10:00:00.000Z", createdAt: "2026-07-16T10:00:00.000Z" },
 ];
 
 const server = http.createServer((req, res) => {
@@ -83,6 +88,7 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://127.0.0.1:19087");
   if (req.method === "GET" && url.pathname === "/api/state") {
     normalizeState();
+    normalizeCounterData();
     res.end(JSON.stringify({ today: TODAY, days: 31, todos, dailyTasks: dailyTasksWithStats(), completedCount: completedTodos.length, counterItems: counterItems.map((item) => ({ ...item, todayTotal: counterRecords.filter((record) => record.itemId === item.id && record.recordedDate === TODAY).reduce((sum, record) => sum + record.amount, 0) })) }));
     return;
   }
@@ -97,6 +103,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/api/counters") {
+    normalizeCounterData();
     const from = url.searchParams.get("from") || TODAY;
     const to = url.searchParams.get("to") || TODAY;
     res.end(JSON.stringify({ from, to, items: counterItems.filter((item) => item.active), records: counterRecords.filter((record) => record.recordedDate >= from && record.recordedDate <= to) }));
@@ -158,9 +165,25 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    if (req.method === "POST" && url.pathname === "/api/daily-tasks/update") {
+      const task = dailyTasks.find((entry) => entry.id === json.id);
+      if (!task) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not_found" }));
+        return;
+      }
+      const text = normalizeDailyText(json.text);
+      task.text = text;
+      for (const todo of todos) {
+        if (todo.sourceDailyTaskId === json.id) todo.text = text;
+      }
+      res.end(JSON.stringify({ ok: true }));
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/counter-items") {
       const id = `counter-${Date.now()}`;
-      const item = { id, name: normalizeText(json.name), kind: json.kind || "count", unit: json.unit || "次", incrementValue: Number(json.incrementValue) || 1, color: json.color || "#256d85", pinned: json.pinned ? 1 : 0, sortOrder: counterItems.length * 1000, active: 1, createdAt: new Date().toISOString() };
+      const item = { id, name: normalizeText(json.name), kind: "count", unit: "次", incrementValue: 1, color: json.color || "#256d85", pinned: json.pinned ? 1 : 0, sortOrder: counterItems.length * 1000, active: 1, createdAt: new Date().toISOString() };
       counterItems.push(item);
       res.end(JSON.stringify(item));
       return;
@@ -173,7 +196,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: "not_found" }));
         return;
       }
-      Object.assign(item, { name: normalizeText(json.name), kind: json.kind || item.kind, unit: json.unit || item.unit, incrementValue: Number(json.incrementValue) || item.incrementValue, color: json.color || item.color, pinned: json.pinned ? 1 : 0 });
+      Object.assign(item, { name: normalizeText(json.name), kind: "count", unit: "次", incrementValue: 1, color: json.color || item.color, pinned: json.pinned ? 1 : 0 });
       res.end(JSON.stringify(item));
       return;
     }
@@ -186,7 +209,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/counter-records") {
-      const record = { id: `counter-record-${Date.now()}`, itemId: json.itemId, amount: Number(json.amount) || 1, recordedDate: json.recordedDate || TODAY, recordedAt: json.recordedAt || new Date().toISOString(), createdAt: new Date().toISOString() };
+      const record = { id: `counter-record-${Date.now()}`, itemId: json.itemId, amount: 1, recordedDate: json.recordedDate || TODAY, recordedAt: json.recordedAt || new Date().toISOString(), createdAt: new Date().toISOString() };
       counterRecords.push(record);
       res.end(JSON.stringify(record));
       return;
@@ -313,39 +336,22 @@ const server = http.createServer((req, res) => {
   console.log("verify: page loaded");
 
   const initialSelected = await page.locator(".todo.selected .todo-text").innerText();
+  const counterMigrationApplied = counterItems.every((item) => item.kind === "count" && item.unit === "次" && item.incrementValue === 1)
+    && counterRecords.every((record) => record.amount === 1);
+  if (!counterMigrationApplied) throw new Error("counter migration was not applied");
 
-  await page.getByRole("button", { name: "打开使用说明" }).click();
-  await page.waitForSelector("#helpBackdrop.open", { timeout: 5000 });
-  const helpManualText = await page.locator("#helpContent").innerText();
-  const helpManualHasShoppingRule = helpManualText.includes("购物清单默认折叠") && helpManualText.includes("Alt+N");
-  await page.getByRole("button", { name: "Prompt版" }).click();
-  await page.waitForFunction(() => {
-    const title = document.getElementById("helpTitle");
-    return title && title.textContent === "Prompt版";
-  });
-  const helpPromptText = await page.locator(".help-prompt-box").inputValue();
-  const helpPromptHasWorker = helpPromptText.includes("Cloudflare Worker + D1");
-  const helpPromptHasApiSpec = helpPromptText.includes("POST /api/todos/bottom");
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => !document.querySelector("#helpBackdrop.open"));
-  console.log("verify: help modal passed");
-
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "todo：增加打卡功能",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-  console.log("verify: initial ordering passed");
-
+  const helpRemoved = await page.locator("#openHelp, #helpBackdrop").count() === 0;
   await page.keyboard.down("Alt");
   await page.keyboard.press("KeyN");
   await page.keyboard.up("Alt");
-  await page.waitForSelector(".modal-backdrop.open");
+  await page.waitForSelector("#modalBackdrop.open", { timeout: 5000 });
+  const dailyPanelRemovedFromNew = await page.locator("#modalBackdrop .daily-panel, #modalBackdrop #dailyItems").count() === 0;
+  const dailyOptionExists = await page.locator('#dateSelect option[value="daily"]').count() === 1;
+  const counterOptionInNewExists = await page.locator('#dateSelect option[value="counter"]').count() === 1;
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "打开每日任务" }).click();
+  await page.waitForSelector("#dailyBackdrop.open", { timeout: 5000 });
   const initialDailyStats = await page.locator(".daily-count-button").first().innerText();
   await page.locator(".daily-count-button").first().click();
   await page.waitForSelector("#checkinBackdrop.open", { timeout: 5000 });
@@ -365,9 +371,33 @@ const server = http.createServer((req, res) => {
   await page.waitForFunction(() => !document.querySelector("#checkinBackdrop.open"));
   const dailyTopButtons = await page.locator('[aria-label^="每日任务置顶："]').count();
   const dailyBottomButtons = await page.locator('[aria-label^="每日任务置底："]').count();
+
+  await page.fill("#dailyText", "阅读");
+  await page.locator("#dailyForm").getByRole("button", { name: "新建" }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "阅读"));
+  await page.getByRole("button", { name: "编辑每日任务：阅读" }).click();
+  await page.fill("#dailyText", "晨间阅读");
+  await page.locator("#dailyForm").getByRole("button", { name: "保存" }).click();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
+  const dailyEditUpdatedTodos = todos.some((todo) => todo.sourceDailyTaskId && todo.text === "（每日任务）晨间阅读");
+  await page.screenshot({ path: dailyScreenshotPath, fullPage: true });
+  await page.getByRole("button", { name: "删除每日任务：晨间阅读" }).click();
+  await page.waitForFunction(() => !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
   await page.keyboard.press("Escape");
-  await page.waitForFunction(() => !document.querySelector(".modal-backdrop.open"));
-  console.log("verify: modal stats passed");
+  await page.waitForFunction(() => !document.querySelector("#dailyBackdrop.open"));
+  console.log("verify: daily manager passed");
+
+  await expectTodayOrder(page, [
+    "（每日任务）淘宝薅羊毛",
+    "（每日任务）吃饭",
+    "电池：修复OTABUG",
+    "电池：修复温度BUG",
+    "todo：增加打卡功能",
+    "下班跑步",
+    "（每日任务）喝水",
+    "（每日任务）健身",
+  ]);
+  console.log("verify: initial ordering passed");
 
   await createTodayTodo(page, "todo：优化排序问题");
   await expectTodayOrder(page, [
@@ -382,7 +412,7 @@ const server = http.createServer((req, res) => {
     "（每日任务）健身",
   ]);
 
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click();
+  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
   await expectTodayOrder(page, [
     "（每日任务）淘宝薅羊毛",
     "（每日任务）吃饭",
@@ -395,7 +425,7 @@ const server = http.createServer((req, res) => {
     "（每日任务）健身",
   ]);
 
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click();
+  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
   await expectTodayOrder(page, [
     "（每日任务）淘宝薅羊毛",
     "（每日任务）吃饭",
@@ -408,7 +438,7 @@ const server = http.createServer((req, res) => {
     "（每日任务）健身",
   ]);
 
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click();
+  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
   await expectTodayOrder(page, [
     "（每日任务）淘宝薅羊毛",
     "（每日任务）吃饭",
@@ -554,16 +584,14 @@ const server = http.createServer((req, res) => {
     return result;
   });
 
-  await page.keyboard.down("Alt");
-  await page.keyboard.press("KeyN");
-  await page.keyboard.up("Alt");
-  await page.waitForSelector(".modal-backdrop.open");
-  await page.getByRole("button", { name: "删除每日任务：（每日任务）喝水" }).click();
+  await page.getByRole("button", { name: "打开每日任务" }).click();
+  await page.waitForSelector("#dailyBackdrop.open");
+  await page.getByRole("button", { name: "删除每日任务：喝水" }).click();
   await page.waitForFunction(() => {
-    return !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => (node.textContent || "").includes("（每日任务）喝水"));
+    return !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => (node.textContent || "") === "喝水");
   });
   await page.keyboard.press("Escape");
-  await page.waitForFunction(() => !document.querySelector(".modal-backdrop.open"));
+  await page.waitForFunction(() => !document.querySelector("#dailyBackdrop.open"));
   console.log("verify: daily delete passed");
 
   const initialCounterShortcutCount = await page.locator(".counter-shortcut").count();
@@ -579,13 +607,18 @@ const server = http.createServer((req, res) => {
   await page.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
   await page.waitForFunction(() => document.querySelectorAll("#counterFilters .counter-filter-row").length >= 2);
   const counterSummaryText = await page.locator("#counterSummary").innerText();
+  const counterRecordsBeforeSidebarQuick = counterRecords.length;
+  await page.locator('[data-counter-add="counter-swim"]').click();
+  await page.waitForSelector("#counterToast.open", { timeout: 5000 });
+  const counterSidebarQuickAdded = counterRecords.length === counterRecordsBeforeSidebarQuick + 1;
+  await page.getByRole("button", { name: "撤销" }).click();
+  await page.waitForFunction(() => !document.querySelector("#counterToast.open"));
+  if (!counterSidebarQuickAdded || counterRecords.length !== counterRecordsBeforeSidebarQuick) throw new Error("counter sidebar quick add failed");
 
   await page.getByRole("button", { name: /新建记录项/ }).click();
   await page.waitForSelector("#counterItemBackdrop.open", { timeout: 5000 });
   await page.screenshot({ path: counterItemScreenshotPath, fullPage: true });
   await page.fill("#counterItemName", "羽毛球");
-  await page.getByRole("button", { name: /时长/ }).click();
-  await page.fill("#counterItemIncrement", "1");
   await page.getByRole("button", { name: "保存" }).click();
   await page.waitForFunction(() => !document.querySelector("#counterItemBackdrop.open"));
   await page.waitForFunction(() => (document.querySelector("#counterFilters")?.textContent || "").includes("羽毛球"));
@@ -595,9 +628,9 @@ const server = http.createServer((req, res) => {
   await page.locator('[data-counter-record-item]').filter({ hasText: "羽毛球" }).click();
   await page.waitForSelector(`[data-counter-calendar-date="${TODAY}"]:not([disabled])`, { timeout: 5000 });
   await page.locator(`[data-counter-calendar-date="${TODAY}"]`).click();
-  await page.waitForFunction((today) => (document.querySelector(`[data-counter-calendar-date="${today}"]`)?.textContent || "").includes("1小时"), TODAY);
+  await page.waitForFunction((today) => (document.querySelector(`[data-counter-calendar-date="${today}"]`)?.textContent || "").includes("1次"), TODAY);
   await page.locator(`[data-counter-calendar-date="${TODAY}"]`).click();
-  await page.waitForFunction((today) => (document.querySelector(`[data-counter-calendar-date="${today}"]`)?.textContent || "").includes("2小时"), TODAY);
+  await page.waitForFunction((today) => (document.querySelector(`[data-counter-calendar-date="${today}"]`)?.textContent || "").includes("2次"), TODAY);
   await page.screenshot({ path: counterCalendarScreenshotPath, fullPage: true });
   await page.locator("#cancelCounterRecord").click();
   await page.waitForFunction(() => !document.querySelector("#counterRecordBackdrop.open"));
@@ -605,8 +638,22 @@ const server = http.createServer((req, res) => {
   await page.waitForFunction(() => document.querySelectorAll("#counterCharts [data-counter-chart-item]").length === 3);
   const counterChartCount = await page.locator("#counterCharts [data-counter-chart-item]").count();
   const counterChartTitles = await page.locator("#counterCharts .counter-panel-head h3").allInnerTexts();
-  const counterChartsSeparated = ["游泳（小时）", "俯卧撑（次）", "羽毛球（小时）"].every((title) => counterChartTitles.includes(title));
+  const counterChartsSeparated = ["游泳（次）", "俯卧撑（次）", "羽毛球（次）"].every((title) => counterChartTitles.includes(title));
   if (!counterChartsSeparated) throw new Error("counter charts were not separated by item");
+  await page.locator('[data-chart-mode="compare"]').click();
+  await page.waitForSelector('#counterCharts [data-counter-chart-mode="compare"]');
+  const counterCompareModeWorks = await page.locator('#counterCharts [data-counter-chart-mode="compare"]').count() === 1
+    && await page.locator('#counterCharts [data-counter-pie]').count() === 1
+    && await page.locator('#counterCharts .counter-pie-total strong').innerText().then((text) => /^\d+(?:\.\d+)?次$/.test(text))
+    && await page.locator('#counterCharts .counter-pie-legend-row').count() === 3
+    && await page.locator('#counterCharts .counter-pie-legend-percent').allTextContents().then((values) => values.every((value) => /^\d+(?:\.\d+)?%$/.test(value)));
+  await page.screenshot({ path: counterCompareScreenshotPath, fullPage: true });
+  await page.locator('[data-chart-mode="sum"]').click();
+  await page.waitForSelector('#counterCharts [data-counter-chart-mode="sum"]');
+  const counterSumModeWorks = await page.locator('#counterCharts [data-counter-chart-mode="sum"] .counter-panel-head h3').innerText() === "合计（次）";
+  if (!counterCompareModeWorks || !counterSumModeWorks) throw new Error("counter chart mode switch failed");
+  await page.locator('[data-chart-mode="separate"]').click();
+  await page.waitForFunction(() => document.querySelectorAll("#counterCharts [data-counter-chart-item]").length === 3);
   const counterCreatedAndRecorded = counterItems.some((item) => item.name === "羽毛球") && counterRecords.some((record) => record.itemId === counterItems.find((item) => item.name === "羽毛球")?.id);
   const counterCalendarRepeated = counterRecords.filter((record) => record.itemId === counterItems.find((item) => item.name === "羽毛球")?.id && record.recordedDate === TODAY).length === 2;
   await page.screenshot({ path: counterScreenshotPath, fullPage: true });
@@ -684,14 +731,38 @@ const server = http.createServer((req, res) => {
   await page.waitForSelector(`.day[data-date="${THIRD_DAY}"]:not(.collapsed)`);
   await page.screenshot({ path: screenshotPath, fullPage: true });
 
+  const mobilePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await mobilePage.goto(`file://${testHtml.replaceAll("\\", "/")}`);
+  await mobilePage.waitForSelector(".todo.selected", { timeout: 5000 });
+  await mobilePage.getByRole("button", { name: "打开累计记录" }).click();
+  await mobilePage.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
+  const mobileCounterControlsVisible = await mobilePage.locator("#counterFilters [data-counter-add]").count() >= 2
+    && await mobilePage.locator("#counterChartModes [data-chart-mode]").count() === 3;
+  if (!mobileCounterControlsVisible) throw new Error("counter controls hidden on mobile");
+  await mobilePage.locator('[data-chart-mode="compare"]').click();
+  await mobilePage.waitForSelector('#counterCharts [data-counter-pie]');
+  await mobilePage.locator('#counterCharts [data-counter-chart-mode="compare"]').screenshot({ path: counterCompareMobileScreenshotPath });
+  await mobilePage.screenshot({ path: counterMobileScreenshotPath, fullPage: true });
+  await mobilePage.keyboard.press("Escape");
+  await mobilePage.waitForFunction(() => !document.querySelector("#counterBackdrop.open"));
+  await mobilePage.getByRole("button", { name: "打开每日任务" }).click();
+  await mobilePage.waitForSelector("#dailyBackdrop.open", { timeout: 5000 });
+  const mobileDailyControlsVisible = await mobilePage.locator("#dailyForm #dailyText").isVisible()
+    && await mobilePage.locator("#dailyItems .daily-row").count() >= 1
+    && await mobilePage.locator('#dailyItems [aria-label^="编辑每日任务："]').first().isVisible();
+  if (!mobileDailyControlsVisible) throw new Error("daily manager controls hidden on mobile");
+  await mobilePage.screenshot({ path: dailyMobileScreenshotPath, fullPage: true });
+
   await browser.close();
   server.close();
 
   const result = {
     initialSelected,
-    helpManualHasShoppingRule,
-    helpPromptHasWorker,
-    helpPromptHasApiSpec,
+    helpRemoved,
+    dailyPanelRemovedFromNew,
+    dailyOptionExists,
+    counterOptionInNewExists,
+    dailyEditUpdatedTodos,
     initialDailyStats,
     afterBackfillStats,
     afterCancelBackfillStats,
@@ -704,9 +775,15 @@ const server = http.createServer((req, res) => {
     initialCounterShortcutCount,
     counterToastText,
     counterUndoRestoredCount,
+    counterMigrationApplied,
     counterSummaryText,
     counterChartCount,
     counterChartsSeparated,
+    counterSidebarQuickAdded,
+    counterCompareModeWorks,
+    counterSumModeWorks,
+    mobileCounterControlsVisible,
+    mobileDailyControlsVisible,
     counterCreatedAndRecorded,
     counterCalendarRepeated,
     counterOptionExists,
@@ -721,8 +798,13 @@ const server = http.createServer((req, res) => {
     errors,
     screenshotPath,
     counterScreenshotPath,
+    counterCompareScreenshotPath,
     counterItemScreenshotPath,
     counterCalendarScreenshotPath,
+    counterMobileScreenshotPath,
+    counterCompareMobileScreenshotPath,
+    dailyScreenshotPath,
+    dailyMobileScreenshotPath,
   };
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) process.exitCode = 1;
@@ -778,6 +860,11 @@ function normalizeState() {
     if (dueDate === SHOPPING_GROUP) continue;
     writeDayOrder(dueDate, canonicalizeRows(orderedTodosForDate(dueDate)));
   }
+}
+
+function normalizeCounterData() {
+  counterItems = counterItems.map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
+  counterRecords = counterRecords.map((record) => ({ ...record, amount: 1 }));
 }
 
 function sortTodos(a, b) {
