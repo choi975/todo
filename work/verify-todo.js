@@ -8,11 +8,11 @@ const sourceHtml = path.join(root, "deploy", "todo.html");
 const testHtml = path.join(root, "work", "todo-test.html");
 const screenshotPath = path.join(root, "outputs", "todo-preview.png");
 const counterScreenshotPath = path.join(root, "outputs", "counter-preview.png");
-const counterCompareScreenshotPath = path.join(root, "outputs", "counter-compare-preview.png");
+const counterStatsScreenshotPath = path.join(root, "outputs", "counter-stats-preview.png");
 const counterItemScreenshotPath = path.join(root, "outputs", "counter-item-preview.png");
 const counterCalendarScreenshotPath = path.join(root, "outputs", "counter-calendar-preview.png");
 const counterMobileScreenshotPath = path.join(root, "outputs", "counter-mobile-preview.png");
-const counterCompareMobileScreenshotPath = path.join(root, "outputs", "counter-compare-mobile-preview.png");
+const counterStatsMobileScreenshotPath = path.join(root, "outputs", "counter-stats-mobile-preview.png");
 const dailyScreenshotPath = path.join(root, "outputs", "daily-preview.png");
 const dailyMobileScreenshotPath = path.join(root, "outputs", "daily-mobile-preview.png");
 const logPath = path.join(root, "work", "verify-todo.log");
@@ -635,25 +635,23 @@ const server = http.createServer((req, res) => {
   await page.locator("#cancelCounterRecord").click();
   await page.waitForFunction(() => !document.querySelector("#counterRecordBackdrop.open"));
   await page.waitForFunction(() => (document.querySelector("#counterRecords")?.textContent || "").includes("羽毛球"));
-  await page.waitForFunction(() => document.querySelectorAll("#counterCharts [data-counter-chart-item]").length === 3);
-  const counterChartCount = await page.locator("#counterCharts [data-counter-chart-item]").count();
-  const counterChartTitles = await page.locator("#counterCharts .counter-panel-head h3").allInnerTexts();
-  const counterChartsSeparated = ["游泳（次）", "俯卧撑（次）", "羽毛球（次）"].every((title) => counterChartTitles.includes(title));
-  if (!counterChartsSeparated) throw new Error("counter charts were not separated by item");
-  await page.locator('[data-chart-mode="compare"]').click();
-  await page.waitForSelector('#counterCharts [data-counter-chart-mode="compare"]');
-  const counterCompareModeWorks = await page.locator('#counterCharts [data-counter-chart-mode="compare"]').count() === 1
+  await page.waitForSelector('#counterCharts [data-counter-stats-chart]');
+  const counterModeControlsRemoved = await page.locator("#counterChartModes").count() === 0
+    && await page.locator("[data-chart-mode]").count() === 0;
+  const counterStatsChartWorks = await page.locator('#counterCharts [data-counter-stats-chart] .counter-panel-head h3').innerText() === "统计"
     && await page.locator('#counterCharts [data-counter-pie]').count() === 1
     && await page.locator('#counterCharts .counter-pie-total strong').innerText().then((text) => /^\d+(?:\.\d+)?次$/.test(text))
     && await page.locator('#counterCharts .counter-pie-legend-row').count() === 3
-    && await page.locator('#counterCharts .counter-pie-legend-percent').allTextContents().then((values) => values.every((value) => /^\d+(?:\.\d+)?%$/.test(value)));
-  await page.screenshot({ path: counterCompareScreenshotPath, fullPage: true });
-  await page.locator('[data-chart-mode="sum"]').click();
-  await page.waitForSelector('#counterCharts [data-counter-chart-mode="sum"]');
-  const counterSumModeWorks = await page.locator('#counterCharts [data-counter-chart-mode="sum"] .counter-panel-head h3').innerText() === "合计（次）";
-  if (!counterCompareModeWorks || !counterSumModeWorks) throw new Error("counter chart mode switch failed");
-  await page.locator('[data-chart-mode="separate"]').click();
-  await page.waitForFunction(() => document.querySelectorAll("#counterCharts [data-counter-chart-item]").length === 3);
+    && await page.locator('#counterCharts .counter-pie-legend-percent').allTextContents().then((values) => values.every((value) => /^\d+(?:\.\d+)?%$/.test(value)))
+    && await page.locator('#counterCharts .counter-pie-segment').count() === 2
+    && await page.locator('#counterCharts .counter-pie-legend-row.is-zero').count() === 1;
+  await page.locator('#counterCharts [data-counter-pie-index="0"]').hover();
+  const counterLegendHighlightWorks = await page.locator('#counterCharts .counter-pie-segment.is-active').count() === 1
+    && await page.locator('#counterCharts .counter-pie-segment:not(.is-active)').count() === 1
+    && await page.locator('#counterCharts [data-counter-pie-index="0"].is-active').count() === 1;
+  await page.mouse.move(0, 0);
+  if (!counterModeControlsRemoved || !counterStatsChartWorks || !counterLegendHighlightWorks) throw new Error("counter statistics chart failed");
+  await page.screenshot({ path: counterStatsScreenshotPath, fullPage: true });
   const counterCreatedAndRecorded = counterItems.some((item) => item.name === "羽毛球") && counterRecords.some((record) => record.itemId === counterItems.find((item) => item.name === "羽毛球")?.id);
   const counterCalendarRepeated = counterRecords.filter((record) => record.itemId === counterItems.find((item) => item.name === "羽毛球")?.id && record.recordedDate === TODAY).length === 2;
   await page.screenshot({ path: counterScreenshotPath, fullPage: true });
@@ -737,11 +735,11 @@ const server = http.createServer((req, res) => {
   await mobilePage.getByRole("button", { name: "打开累计记录" }).click();
   await mobilePage.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
   const mobileCounterControlsVisible = await mobilePage.locator("#counterFilters [data-counter-add]").count() >= 2
-    && await mobilePage.locator("#counterChartModes [data-chart-mode]").count() === 3;
+    && await mobilePage.locator("#counterPeriods [data-period]").count() === 4
+    && await mobilePage.locator("#counterChartModes").count() === 0;
   if (!mobileCounterControlsVisible) throw new Error("counter controls hidden on mobile");
-  await mobilePage.locator('[data-chart-mode="compare"]').click();
-  await mobilePage.waitForSelector('#counterCharts [data-counter-pie]');
-  await mobilePage.locator('#counterCharts [data-counter-chart-mode="compare"]').screenshot({ path: counterCompareMobileScreenshotPath });
+  await mobilePage.waitForSelector('#counterCharts [data-counter-stats-chart] [data-counter-pie]');
+  await mobilePage.locator('#counterCharts [data-counter-stats-chart]').screenshot({ path: counterStatsMobileScreenshotPath });
   await mobilePage.screenshot({ path: counterMobileScreenshotPath, fullPage: true });
   await mobilePage.keyboard.press("Escape");
   await mobilePage.waitForFunction(() => !document.querySelector("#counterBackdrop.open"));
@@ -777,11 +775,10 @@ const server = http.createServer((req, res) => {
     counterUndoRestoredCount,
     counterMigrationApplied,
     counterSummaryText,
-    counterChartCount,
-    counterChartsSeparated,
     counterSidebarQuickAdded,
-    counterCompareModeWorks,
-    counterSumModeWorks,
+    counterModeControlsRemoved,
+    counterStatsChartWorks,
+    counterLegendHighlightWorks,
     mobileCounterControlsVisible,
     mobileDailyControlsVisible,
     counterCreatedAndRecorded,
@@ -798,11 +795,11 @@ const server = http.createServer((req, res) => {
     errors,
     screenshotPath,
     counterScreenshotPath,
-    counterCompareScreenshotPath,
+    counterStatsScreenshotPath,
     counterItemScreenshotPath,
     counterCalendarScreenshotPath,
     counterMobileScreenshotPath,
-    counterCompareMobileScreenshotPath,
+    counterStatsMobileScreenshotPath,
     dailyScreenshotPath,
     dailyMobileScreenshotPath,
   };

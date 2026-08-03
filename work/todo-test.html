@@ -1246,7 +1246,6 @@
     .counter-toolbar,
     .counter-segment,
     .counter-range,
-    .counter-legend,
     .counter-summary-name,
     .counter-record-name,
     .counter-filter-label,
@@ -1470,10 +1469,6 @@
       font-weight: 720;
     }
 
-    .counter-mode-segment button {
-      min-width: 54px;
-    }
-
     .counter-range {
       gap: 7px;
       color: #445149;
@@ -1560,27 +1555,6 @@
       line-height: 1.45;
     }
 
-    .counter-legend {
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px;
-      color: #4e5b54;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .counter-legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .counter-chart {
-      height: 210px;
-      display: grid;
-      grid-template-columns: 38px minmax(0, 1fr);
-    }
-
     .counter-pie-layout {
       min-height: 210px;
       display: grid;
@@ -1594,18 +1568,41 @@
       width: min(190px, 100%);
       aspect-ratio: 1;
       justify-self: center;
-      border-radius: 50%;
-      background: var(--counter-pie-background, #eef2ef);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.84), 0 2px 7px rgba(31, 58, 48, 0.08);
+      filter: drop-shadow(0 2px 4px rgba(31, 58, 48, 0.12));
+      animation: counter-pie-enter 280ms ease-out both;
     }
 
-    .counter-pie::before {
-      content: "";
-      position: absolute;
-      inset: 28%;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 0 0 1px #eef2ef;
+    .counter-pie-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .counter-pie-track,
+    .counter-pie-segment {
+      fill: none;
+      stroke-width: 27;
+    }
+
+    .counter-pie-track {
+      stroke: #fff;
+    }
+
+    .counter-pie-segment {
+      stroke: var(--counter-color, var(--accent));
+      transform: rotate(-90deg);
+      transform-origin: 60px 60px;
+      transition: opacity 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+    }
+
+    .counter-pie.has-highlight .counter-pie-segment:not(.is-active) {
+      opacity: 0.24;
+    }
+
+    .counter-pie-segment.is-active {
+      stroke-width: 30;
+      filter: brightness(1.04) saturate(1.08);
     }
 
     .counter-pie-total {
@@ -1649,6 +1646,25 @@
       color: #445149;
       font-size: 13px;
       font-weight: 620;
+      outline: none;
+      transition: border-color 180ms ease, background 180ms ease, opacity 180ms ease, transform 180ms ease;
+    }
+
+    .counter-pie-legend-row[data-counter-pie-index] {
+      cursor: default;
+    }
+
+    .counter-pie-legend-row[data-counter-pie-index]:hover,
+    .counter-pie-legend-row[data-counter-pie-index]:focus-visible,
+    .counter-pie-legend-row.is-active {
+      border-color: color-mix(in srgb, var(--counter-color, var(--accent)) 38%, #dce3df);
+      background: color-mix(in srgb, var(--counter-color, var(--accent)) 7%, white);
+      transform: translateX(2px);
+    }
+
+    .counter-pie-legend-row.is-zero {
+      background: #f7f9f8;
+      opacity: 0.52;
     }
 
     .counter-pie-legend-name {
@@ -1678,69 +1694,26 @@
       white-space: nowrap;
     }
 
-    .counter-y-axis {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 0 7px 19px 0;
-      color: #53605a;
-      font-size: 11px;
-      font-weight: 560;
-      text-align: right;
+    @keyframes counter-pie-enter {
+      from {
+        opacity: 0;
+        transform: scale(0.96) rotate(-3deg);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+      }
     }
 
-    .counter-plot {
-      position: relative;
-      margin-bottom: 19px;
-      border-left: 1px solid #e6ece8;
-      border-bottom: 1px solid #e6ece8;
-    }
+    @media (prefers-reduced-motion: reduce) {
+      .counter-pie {
+        animation: none;
+      }
 
-    .counter-gridline {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: #eef2ef;
-    }
-
-    .counter-bars {
-      position: absolute;
-      inset: 0 6px;
-      display: grid;
-      grid-template-columns: repeat(var(--bucket-count), minmax(0, 1fr));
-      align-items: end;
-      gap: 6px;
-    }
-
-    .counter-bar-group {
-      position: relative;
-      height: 100%;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      gap: 2px;
-    }
-
-    .counter-bar {
-      width: min(16px, 38%);
-      min-height: 2px;
-      border-radius: 5px 5px 2px 2px;
-      background: var(--counter-color, var(--accent));
-    }
-
-    .counter-bar-label {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -18px;
-      overflow: hidden;
-      color: #53605a;
-      font-size: 11px;
-      font-weight: 560;
-      text-align: center;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      .counter-pie-segment,
+      .counter-pie-legend-row {
+        transition: none;
+      }
     }
 
     .counter-records {
@@ -2397,11 +2370,6 @@
                 <button type="button" data-period="month">月</button>
                 <button type="button" data-period="year">年</button>
               </div>
-              <div class="counter-segment counter-mode-segment" id="counterChartModes" role="tablist" aria-label="图表模式">
-                <button type="button" data-chart-mode="separate" class="active">分开</button>
-                <button type="button" data-chart-mode="compare">对比</button>
-                <button type="button" data-chart-mode="sum">合计</button>
-              </div>
             </div>
             <div class="counter-range"><button id="counterPrev" type="button" aria-label="上一段时间">‹</button><strong id="counterRangeLabel"></strong><button id="counterNext" type="button" aria-label="下一段时间">›</button></div>
           </div>
@@ -2461,7 +2429,6 @@
       counterRecords: [],
       counterSelectedIds: [],
       counterPeriod: "week",
-      counterChartMode: loadCounterChartMode(),
       counterCursor: toLocalDateString(new Date()),
       counterItemPinned: true,
       counterCalendarItemId: null,
@@ -2516,7 +2483,6 @@
       closeCounter: document.getElementById("closeCounter"),
       counterFilters: document.getElementById("counterFilters"),
       counterPeriods: document.getElementById("counterPeriods"),
-      counterChartModes: document.getElementById("counterChartModes"),
       counterPrev: document.getElementById("counterPrev"),
       counterNext: document.getElementById("counterNext"),
       counterRangeLabel: document.getElementById("counterRangeLabel"),
@@ -2602,7 +2568,10 @@
     els.counterFilters.addEventListener("click", handleCounterFilterClick);
     els.counterRecords.addEventListener("click", handleCounterRecordListClick);
     els.counterPeriods.addEventListener("click", handleCounterPeriodClick);
-    els.counterChartModes.addEventListener("click", handleCounterChartModeClick);
+    els.counterCharts.addEventListener("pointerover", handleCounterPieLegendOver);
+    els.counterCharts.addEventListener("pointerout", handleCounterPieLegendOut);
+    els.counterCharts.addEventListener("focusin", handleCounterPieLegendOver);
+    els.counterCharts.addEventListener("focusout", handleCounterPieLegendOut);
     els.counterPrev.addEventListener("click", () => moveCounterPeriod(-1));
     els.counterNext.addEventListener("click", () => moveCounterPeriod(1));
     els.counterColors.addEventListener("click", handleCounterColorClick);
@@ -2835,7 +2804,6 @@
       const range = counterDateRange();
       els.counterRangeLabel.textContent = range.label;
       els.counterPeriods.querySelectorAll("[data-period]").forEach((button) => button.classList.toggle("active", button.dataset.period === state.counterPeriod));
-      els.counterChartModes.querySelectorAll("[data-chart-mode]").forEach((button) => button.classList.toggle("active", button.dataset.chartMode === state.counterChartMode));
       renderCounterFilters();
       renderCounterSummary();
       renderCounterCharts();
@@ -2894,14 +2862,6 @@
       void loadCounterData();
     }
 
-    function handleCounterChartModeClick(event) {
-      const button = event.target.closest("[data-chart-mode]");
-      if (!button || button.dataset.chartMode === state.counterChartMode) return;
-      state.counterChartMode = button.dataset.chartMode;
-      saveCounterChartMode();
-      renderCounterView();
-    }
-
     function moveCounterPeriod(direction) {
       const cursor = parseDate(state.counterCursor);
       if (state.counterPeriod === "day") cursor.setDate(cursor.getDate() + direction);
@@ -2954,71 +2914,59 @@
         els.counterCharts.innerHTML = "";
         return;
       }
-      const range = counterDateRange();
-      const buckets = buildCounterBuckets(range);
       const series = items.map((item) => ({
         name: item.name,
         color: item.color,
-        values: buckets.map((bucket) => records.filter((record) => record.itemId === item.id && counterRecordBucket(record, range) === bucket.key).reduce((sum, record) => sum + Number(record.amount || 0), 0)),
+        total: records.filter((record) => record.itemId === item.id).reduce((sum, record) => sum + Number(record.amount || 0), 0),
       }));
-      if (state.counterChartMode === "compare") {
-        els.counterCharts.innerHTML = renderCounterPieChart(series);
-        return;
-      }
-      if (state.counterChartMode === "sum") {
-        const values = buckets.map((bucket, index) => series.reduce((sum, entry) => sum + entry.values[index], 0));
-        els.counterCharts.innerHTML = renderCounterChartPanel({
-          key: "sum",
-          title: "合计（次）",
-          subtitle: items.map((item) => item.name).join("、"),
-          series: [{ name: "合计", color: "#256d85", values }],
-          buckets,
-        });
-        return;
-      }
-      els.counterCharts.innerHTML = series.map((entry, index) => renderCounterChartPanel({
-        key: `item-${items[index].id}`,
-        itemId: items[index].id,
-        title: `${entry.name}（次）`,
-        series: [entry],
-        buckets,
-      })).join("");
-    }
-
-    function renderCounterChartPanel({ key, itemId = "", title, subtitle = "", series, buckets }) {
-      const maximum = Math.max(0, ...series.flatMap((entry) => entry.values));
-      const bars = buckets.map((bucket, bucketIndex) => `<div class="counter-bar-group">${series.map((entry) => {
-        const value = entry.values[bucketIndex];
-        const height = maximum > 0 ? Math.max(value > 0 ? 2 : 0, value / maximum * 100) : 0;
-        return `<i class="counter-bar" title="${escapeHtml(entry.name)} ${escapeHtml(formatCounterValue(value))}" style="height:${height}%;--counter-color:${escapeHtml(entry.color)}"></i>`;
-      }).join("")}<span class="counter-bar-label">${escapeHtml(bucket.label)}</span></div>`).join("");
-      const axisMax = maximum || 1;
-      const single = series.length === 1 ? series[0] : null;
-      const heading = `${single ? `<i class="counter-record-dot" style="--counter-color:${escapeHtml(single.color)}"></i>` : ""}${escapeHtml(title)}`;
-      const legend = series.length > 1 ? `<div class="counter-legend">${series.map((entry) => `<span><i class="counter-record-dot" style="--counter-color:${escapeHtml(entry.color)}"></i>${escapeHtml(entry.name)}</span>`).join("")}</div>` : "";
-      const itemAttribute = itemId ? ` data-counter-chart-item="${escapeHtml(itemId)}"` : "";
-      return `<section class="counter-panel" data-counter-chart-mode="${escapeHtml(key)}"${itemAttribute}><div class="counter-panel-head"><div><h3>${heading}</h3>${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ""}</div>${legend}</div><div class="counter-chart"><div class="counter-y-axis"><span>${escapeHtml(formatCounterAmount(axisMax))}</span><span>${escapeHtml(formatCounterAmount(axisMax / 2))}</span><span>0</span></div><div class="counter-plot"><i class="counter-gridline" style="top:0"></i><i class="counter-gridline" style="top:50%"></i><div class="counter-bars" style="--bucket-count:${buckets.length}">${bars}</div></div></div></section>`;
+      els.counterCharts.innerHTML = renderCounterPieChart(series);
     }
 
     function renderCounterPieChart(series) {
-      const entries = series.map((entry) => ({
-        ...entry,
-        total: entry.values.reduce((sum, value) => sum + Number(value || 0), 0),
-      }));
+      const entries = series;
       const total = entries.reduce((sum, entry) => sum + entry.total, 0);
       if (total <= 0) {
-        return '<section class="counter-panel" data-counter-chart-mode="compare"><div class="counter-panel-head"><div><h3>对比（次）</h3></div></div><div class="counter-empty">这个时间范围还没有可对比的记录</div></section>';
+        return '<section class="counter-panel" data-counter-stats-chart><div class="counter-panel-head"><div><h3>统计</h3></div></div><div class="counter-empty">这个时间范围还没有记录</div></section>';
       }
       let progress = 0;
-      const slices = entries.filter((entry) => entry.total > 0).map((entry, index, positiveEntries) => {
+      const positiveEntries = entries.filter((entry) => entry.total > 0);
+      const slices = positiveEntries.map((entry, index) => {
         const start = progress;
-        progress += entry.total / total * 100;
-        const end = index === positiveEntries.length - 1 ? 100 : progress;
-        return `${counterChartColor(entry.color)} ${start}% ${end}%`;
-      });
+        const percentage = entry.total / total * 100;
+        progress += percentage;
+        const separator = positiveEntries.length > 1 ? Math.min(0.8, percentage * 0.18) : 0;
+        const visible = Math.max(percentage - separator, 0.1);
+        return `<circle class="counter-pie-segment" data-counter-pie-segment="${index}" cx="60" cy="60" r="44" pathLength="100" style="--counter-color:${escapeHtml(counterChartColor(entry.color))};stroke-dasharray:${visible} ${100 - visible};stroke-dashoffset:${-start}"><title>${escapeHtml(entry.name)}：${escapeHtml(formatCounterValue(entry.total))}，${escapeHtml(formatCounterPercentage(percentage))}</title></circle>`;
+      }).join("");
       const details = entries.map((entry) => `${entry.name} ${formatCounterValue(entry.total)} ${formatCounterPercentage(entry.total / total * 100)}`).join("，");
-      const legend = entries.map((entry) => `<div class="counter-pie-legend-row" role="listitem"><span class="counter-pie-legend-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(counterChartColor(entry.color))}"></i><b>${escapeHtml(entry.name)}</b></span><strong class="counter-pie-legend-value">${escapeHtml(formatCounterValue(entry.total))}</strong><span class="counter-pie-legend-percent">${escapeHtml(formatCounterPercentage(entry.total / total * 100))}</span></div>`).join("");
-      return `<section class="counter-panel" data-counter-chart-mode="compare"><div class="counter-panel-head"><div><h3>对比（次）</h3></div></div><div class="counter-pie-layout"><div class="counter-pie" data-counter-pie role="img" aria-label="对比：总计 ${escapeHtml(formatCounterValue(total))}，${escapeHtml(details)}" style="--counter-pie-background:conic-gradient(${slices.join(",")})"><div class="counter-pie-total"><strong>${escapeHtml(formatCounterValue(total))}</strong><span>总计</span></div></div><div class="counter-pie-legend" role="list">${legend}</div></div></section>`;
+      let positiveIndex = 0;
+      const legend = entries.map((entry) => {
+        const isZero = entry.total <= 0;
+        const indexAttribute = isZero ? "" : ` data-counter-pie-index="${positiveIndex++}" tabindex="0"`;
+        return `<div class="counter-pie-legend-row${isZero ? " is-zero" : ""}" role="listitem"${indexAttribute} style="--counter-color:${escapeHtml(counterChartColor(entry.color))}"><span class="counter-pie-legend-name"><i class="counter-record-dot" style="--counter-color:${escapeHtml(counterChartColor(entry.color))}"></i><b>${escapeHtml(entry.name)}</b></span><strong class="counter-pie-legend-value">${escapeHtml(formatCounterValue(entry.total))}</strong><span class="counter-pie-legend-percent">${escapeHtml(formatCounterPercentage(entry.total / total * 100))}</span></div>`;
+      }).join("");
+      return `<section class="counter-panel" data-counter-stats-chart><div class="counter-panel-head"><div><h3>统计</h3></div></div><div class="counter-pie-layout"><div class="counter-pie" data-counter-pie role="img" aria-label="统计：总计 ${escapeHtml(formatCounterValue(total))}，${escapeHtml(details)}"><svg class="counter-pie-svg" viewBox="0 0 120 120" aria-hidden="true"><circle class="counter-pie-track" cx="60" cy="60" r="44"></circle>${slices}</svg><div class="counter-pie-total"><strong>${escapeHtml(formatCounterValue(total))}</strong><span>总计</span></div></div><div class="counter-pie-legend" role="list">${legend}</div></div></section>`;
+    }
+
+    function handleCounterPieLegendOver(event) {
+      const row = event.target.closest("[data-counter-pie-index]");
+      if (!row || !els.counterCharts.contains(row)) return;
+      setCounterPieHighlight(row.dataset.counterPieIndex);
+    }
+
+    function handleCounterPieLegendOut(event) {
+      const row = event.target.closest("[data-counter-pie-index]");
+      if (!row || row.contains(event.relatedTarget)) return;
+      setCounterPieHighlight("");
+    }
+
+    function setCounterPieHighlight(index) {
+      const pie = els.counterCharts.querySelector("[data-counter-pie]");
+      if (!pie) return;
+      const active = index !== "";
+      pie.classList.toggle("has-highlight", active);
+      pie.querySelectorAll("[data-counter-pie-segment]").forEach((segment) => segment.classList.toggle("is-active", active && segment.dataset.counterPieSegment === index));
+      els.counterCharts.querySelectorAll("[data-counter-pie-index]").forEach((row) => row.classList.toggle("is-active", active && row.dataset.counterPieIndex === index));
     }
 
     function renderCounterRecords() {
@@ -3054,29 +3002,6 @@
 
     function selectedCounterRecords() {
       return state.counterRecords.filter((record) => state.counterSelectedIds.includes(record.itemId));
-    }
-
-    function buildCounterBuckets(range) {
-      if (state.counterPeriod === "day") return Array.from({ length: 6 }, (_, index) => ({ key: String(index), label: `${index * 4}时` }));
-      if (state.counterPeriod === "year") return Array.from({ length: 12 }, (_, index) => ({ key: `${range.from.slice(0, 4)}-${String(index + 1).padStart(2, "0")}`, label: `${index + 1}月` }));
-      const count = daysBetween(range.from, range.to) + 1;
-      return Array.from({ length: count }, (_, index) => {
-        const date = addDays(range.from, index);
-        const parsed = parseDate(date);
-        const showMonthDay = state.counterPeriod === "week";
-        const showDay = state.counterPeriod === "month" && (index === 0 || parsed.getDate() % 5 === 0 || index === count - 1);
-        return { key: date, label: showMonthDay ? `周${WEEKDAYS[parsed.getDay()]}` : (showDay ? String(parsed.getDate()) : "") };
-      });
-    }
-
-    function counterRecordBucket(record, range) {
-      if (state.counterPeriod === "day") {
-        if (record.recordedDate !== range.from) return "";
-        const date = new Date(record.recordedAt);
-        return String(Math.floor((Number.isNaN(date.getTime()) ? 0 : date.getHours()) / 4));
-      }
-      if (state.counterPeriod === "year") return String(record.recordedDate || "").slice(0, 7);
-      return record.recordedDate;
     }
 
     function openCounterItem(itemId = "") {
@@ -4769,15 +4694,6 @@
 
     function saveCollapsed() {
       localStorage.setItem("todo-collapsed-days", JSON.stringify(state.collapsed));
-    }
-
-    function loadCounterChartMode() {
-      const mode = localStorage.getItem("todo-counter-chart-mode");
-      return ["separate", "compare", "sum"].includes(mode) ? mode : "separate";
-    }
-
-    function saveCounterChartMode() {
-      localStorage.setItem("todo-counter-chart-mode", state.counterChartMode);
     }
 
     function isTextEntryTarget(target) {
