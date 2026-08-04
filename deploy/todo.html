@@ -2411,7 +2411,7 @@
   <div class="counter-toast" id="counterToast" role="status" aria-live="polite"><span class="counter-toast-check">✓</span><span class="counter-toast-message" id="counterToastMessage"></span><button class="counter-toast-undo" id="counterToastUndo" type="button">撤销</button></div>
 
   <script>
-    const API_BASE = location.protocol === "file:"
+    const API_BASE = location.protocol === "file:" || location.hostname.endsWith(".github.io")
       ? "https://todo.choi975.workers.dev"
       : location.origin;
     const API_TOKEN = "";
