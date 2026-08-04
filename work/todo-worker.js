@@ -1604,6 +1604,9 @@ async function login(request, env) {
   if (!hashConfig || !secret) {
     return json({ error: "auth_not_configured" }, 503);
   }
+  if (!isValidHashConfig(hashConfig)) {
+    return json({ error: "invalid_auth_config" }, 503);
+  }
 
   await ensureBaseTables(env.DB);
   const ip = clientIp(request);
@@ -1704,6 +1707,22 @@ async function verifyPassword(password, hashConfig) {
     expected.length * 8
   ));
   return timingSafeEqual(bits, expected);
+}
+
+function isValidHashConfig(hashConfig) {
+  const parts = hashConfig.split("$");
+  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
+  const iterations = Number(parts[1]);
+  if (!Number.isInteger(iterations) || iterations < 1000 || iterations > 10000000) return false;
+  let salt;
+  let expected;
+  try {
+    salt = base64ToBytes(parts[2]);
+    expected = base64ToBytes(parts[3]);
+  } catch {
+    return false;
+  }
+  return salt.length > 0 && expected.length > 0;
 }
 
 async function checkLoginLock(db, ip) {
