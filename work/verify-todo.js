@@ -76,7 +76,7 @@ let counterRecords = [
 
 const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Todo-Token");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Todo-Session");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   if (req.method === "OPTIONS") {

@@ -1,7 +1,7 @@
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Todo-Token",
+  "Access-Control-Allow-Headers": "Content-Type, X-Todo-Session",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -9,6 +9,9 @@ let cachedSchema = null;
 const SHOPPING_DUE_DATE = "__shopping__";
 const DAILY_COUNTER_START_DATE = "2026-07-08";
 const DAILY_TASK_PREFIX = "（每日任务）";
+const SESSION_TTL_MS = 10 * 365 * 24 * 60 * 60 * 1000;
+const AUTH_MAX_FAILED_ATTEMPTS = 5;
+const AUTH_LOCK_MS = 10 * 60 * 1000;
 
 export default {
   async fetch(request, env) {
@@ -17,13 +20,17 @@ export default {
     }
 
     try {
-      const configuredToken = typeof env.API_TOKEN === "string" ? env.API_TOKEN.trim() : "";
-      if (configuredToken && request.headers.get("X-Todo-Token") !== configuredToken) {
-        return json({ error: "unauthorized" }, 401);
-      }
-
       const url = new URL(request.url);
       const path = url.pathname.replace(/\/+$/, "") || "/";
+
+      if (request.method === "POST" && path === "/api/auth/login") {
+        return await login(request, env);
+      }
+
+      if (path.startsWith("/api/")) {
+        const session = await requireSession(request, env);
+        if (!session.ok) return session.response;
+      }
 
       if (request.method === "GET" && path === "/api/state") {
         const today = normalizedDate(url.searchParams.get("today"));
@@ -1086,6 +1093,12 @@ async function ensureBaseTables(db) {
       recorded_at TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS login_attempts (
+      ip TEXT PRIMARY KEY,
+      failures INTEGER NOT NULL DEFAULT 0,
+      locked_until TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
   ];
   for (const statement of statements) {
     await db.prepare(statement).run();
@@ -1581,6 +1594,195 @@ function dailyCheckinDateForTodo(todo) {
 function clampNumber(value, min, max) {
   if (!Number.isFinite(value)) return min;
   return Math.max(min, Math.min(max, value));
+}
+
+async function login(request, env) {
+  const body = await readJson(request);
+  const password = String(body.password || "");
+  const hashConfig = typeof env.PASSWORD_HASH === "string" ? env.PASSWORD_HASH.trim() : "";
+  const secret = typeof env.SESSION_SECRET === "string" ? env.SESSION_SECRET.trim() : "";
+  if (!hashConfig || !secret) {
+    return json({ error: "auth_not_configured" }, 503);
+  }
+
+  await ensureBaseTables(env.DB);
+  const ip = clientIp(request);
+  const lock = await checkLoginLock(env.DB, ip);
+  if (lock.locked) {
+    return json({ error: "too_many_attempts", retryAfter: lock.retryAfter }, 429);
+  }
+
+  const ok = await verifyPassword(password, hashConfig);
+  if (!ok) {
+    await recordFailedLogin(env.DB, ip);
+    return json({ error: "wrong_password" }, 401);
+  }
+
+  await clearLoginFailures(env.DB, ip);
+  const exp = Date.now() + SESSION_TTL_MS;
+  const token = await signSessionToken({ v: 1, exp, n: randomHex(8) }, secret);
+  return json({ token, expiresAt: new Date(exp).toISOString() });
+}
+
+async function requireSession(request, env) {
+  const secret = typeof env.SESSION_SECRET === "string" ? env.SESSION_SECRET.trim() : "";
+  if (!secret) {
+    return { ok: false, response: json({ error: "auth_not_configured" }, 503) };
+  }
+  const header = request.headers.get("X-Todo-Session") || "";
+  const valid = await verifySessionToken(header, secret);
+  if (!valid) {
+    return { ok: false, response: json({ error: "unauthorized" }, 401) };
+  }
+  return { ok: true };
+}
+
+async function signSessionToken(payload, secret) {
+  const payloadJson = JSON.stringify(payload);
+  const payloadB64 = base64urlEncode(new TextEncoder().encode(payloadJson));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadB64)));
+  return `${payloadB64}.${base64urlEncode(signature)}`;
+}
+
+async function verifySessionToken(token, secret) {
+  if (typeof token !== "string" || !token) return false;
+  const dot = token.indexOf(".");
+  if (dot <= 0 || dot >= token.length - 1) return false;
+  const payloadB64 = token.slice(0, dot);
+  const signatureB64 = token.slice(dot + 1);
+  let payload;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(base64urlDecode(payloadB64)));
+  } catch {
+    return false;
+  }
+  if (!payload || payload.v !== 1 || typeof payload.exp !== "number" || payload.exp <= Date.now()) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+  const expected = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadB64)));
+  let provided;
+  try {
+    provided = base64urlDecode(signatureB64);
+  } catch {
+    return false;
+  }
+  return timingSafeEqual(expected, provided);
+}
+
+async function verifyPassword(password, hashConfig) {
+  const parts = hashConfig.split("$");
+  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
+  const iterations = Number(parts[1]);
+  let salt;
+  let expected;
+  try {
+    salt = base64ToBytes(parts[2]);
+    expected = base64ToBytes(parts[3]);
+  } catch {
+    return false;
+  }
+  if (!Number.isInteger(iterations) || iterations < 1000 || iterations > 10000000 || salt.length === 0 || expected.length === 0) {
+    return false;
+  }
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations },
+    keyMaterial,
+    expected.length * 8
+  ));
+  return timingSafeEqual(bits, expected);
+}
+
+async function checkLoginLock(db, ip) {
+  await db.prepare(
+    `INSERT OR IGNORE INTO login_attempts (ip, failures, locked_until, updated_at) VALUES (?, 0, NULL, CURRENT_TIMESTAMP)`
+  ).bind(ip).run();
+  const row = await db.prepare(
+    `SELECT failures, locked_until FROM login_attempts WHERE ip = ?`
+  ).bind(ip).first();
+  const lockedUntil = row && row.locked_until ? new Date(row.locked_until).getTime() : 0;
+  if (lockedUntil > Date.now()) {
+    return { locked: true, retryAfter: Math.ceil((lockedUntil - Date.now()) / 1000) };
+  }
+  return { locked: false };
+}
+
+async function recordFailedLogin(db, ip) {
+  const row = await db.prepare(`SELECT failures FROM login_attempts WHERE ip = ?`).bind(ip).first();
+  const failures = Number(row?.failures || 0) + 1;
+  if (failures >= AUTH_MAX_FAILED_ATTEMPTS) {
+    const lockedUntil = new Date(Date.now() + AUTH_LOCK_MS).toISOString();
+    await db.prepare(
+      `UPDATE login_attempts SET failures = ?, locked_until = ?, updated_at = CURRENT_TIMESTAMP WHERE ip = ?`
+    ).bind(failures, lockedUntil, ip).run();
+  } else {
+    await db.prepare(
+      `UPDATE login_attempts SET failures = ?, locked_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE ip = ?`
+    ).bind(failures, ip).run();
+  }
+}
+
+async function clearLoginFailures(db, ip) {
+  await db.prepare(
+    `UPDATE login_attempts SET failures = 0, locked_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE ip = ?`
+  ).bind(ip).run();
+}
+
+function clientIp(request) {
+  const direct = request.headers.get("CF-Connecting-IP");
+  if (direct) return direct;
+  const forwarded = request.headers.get("X-Forwarded-For") || "";
+  const first = forwarded.split(",")[0].trim();
+  return first || "unknown";
+}
+
+function timingSafeEqual(left, right) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left[index] ^ right[index];
+  }
+  return difference === 0;
+}
+
+function base64urlEncode(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64urlDecode(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function base64ToBytes(value) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function randomHex(byteLength) {
+  const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function json(payload, status = 200) {

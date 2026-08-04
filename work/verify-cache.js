@@ -37,7 +37,7 @@ const cachedState = {
 let stateRequests = 0;
 const server = http.createServer(async (request, response) => {
   response.setHeader("Access-Control-Allow-Origin", "*");
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Todo-Token");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Todo-Session");
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   if (request.method === "OPTIONS") {

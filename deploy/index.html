@@ -2224,9 +2224,110 @@
         padding-right: 72px;
       }
     }
+
+    .auth-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(36, 31, 26, 0.5);
+    }
+
+    .auth-backdrop.open {
+      display: flex;
+    }
+
+    .auth-card {
+      width: min(380px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 26px 24px 24px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .auth-title {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 780;
+    }
+
+    .auth-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .auth-input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      padding: 0 13px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .auth-input:focus {
+      outline: 3px solid rgba(37, 109, 133, 0.2);
+      border-color: var(--accent);
+    }
+
+    .auth-submit {
+      min-height: 46px;
+      border: 1px solid #1d596d;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 760;
+      cursor: pointer;
+    }
+
+    .auth-submit:hover,
+    .auth-submit:focus-visible {
+      background: #1d596d;
+      outline: 3px solid rgba(37, 109, 133, 0.22);
+    }
+
+    .auth-submit:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .auth-error {
+      margin: 0;
+      color: #9b2c20;
+      font-size: 14px;
+      min-height: 18px;
+    }
   </style>
 </head>
 <body>
+  <div class="auth-backdrop" id="authBackdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <section class="auth-card">
+      <h2 class="auth-title" id="authTitle">请输入访问密码</h2>
+      <p class="auth-hint">验证通过后才能查看和编辑待办事项</p>
+      <form class="auth-form" id="authForm">
+        <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" placeholder="密码" required>
+        <button class="auth-submit" id="authSubmit" type="submit">进入</button>
+      </form>
+      <p class="auth-error" id="authError" role="alert"></p>
+    </section>
+  </div>
+
   <main class="app" aria-label="待办软件">
     <header class="topbar">
       <div class="brand">
@@ -2414,7 +2515,7 @@
     const API_BASE = location.protocol === "file:" || location.hostname.endsWith(".github.io")
       ? "https://todo.choi975.workers.dev"
       : location.origin;
-    const API_TOKEN = "";
+    const AUTH_TOKEN_KEY = "todo-session-token";
     const DAY_COUNT = 31;
     const SHOPPING_GROUP = "__shopping__";
     const STATE_CACHE_KEY = "todo-state-cache-v1";
@@ -2581,15 +2682,99 @@
     els.newForm.addEventListener("submit", submitNewItem);
     document.addEventListener("keydown", handleKeys);
 
+    const authEls = {
+      backdrop: document.getElementById("authBackdrop"),
+      form: document.getElementById("authForm"),
+      password: document.getElementById("authPassword"),
+      submit: document.getElementById("authSubmit"),
+      error: document.getElementById("authError"),
+    };
+
+    function sessionToken() {
+      try {
+        return localStorage.getItem(AUTH_TOKEN_KEY) || "";
+      } catch {
+        return "";
+      }
+    }
+
+    function clearSessionToken() {
+      try {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      } catch {}
+    }
+
+    function showAuth(message) {
+      authEls.backdrop.classList.add("open");
+      authEls.error.textContent = message || "";
+      window.setTimeout(() => authEls.password.focus(), 0);
+    }
+
+    function hideAuth() {
+      authEls.backdrop.classList.remove("open");
+      authEls.error.textContent = "";
+      authEls.password.value = "";
+    }
+
+    function setAuthBusy(busy) {
+      authEls.submit.disabled = busy;
+      authEls.password.disabled = busy;
+    }
+
+    function handleSessionExpired() {
+      clearSessionToken();
+      showAuth("会话已失效，请重新输入密码");
+    }
+
+    authEls.form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const password = authEls.password.value;
+      if (!password || authEls.submit.disabled) return;
+      setAuthBusy(true);
+      authEls.error.textContent = "";
+      try {
+        const response = await fetch(API_BASE + "/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 429) {
+            const minutes = Math.ceil(Number(data.retryAfter || 0) / 60);
+            authEls.error.textContent = minutes > 0 ? `尝试次数过多，请约 ${minutes} 分钟后再试` : "尝试次数过多，请稍后再试";
+          } else {
+            authEls.error.textContent = "密码错误，请重试";
+          }
+          return;
+        }
+        if (!data.token) throw new Error("missing_token");
+        try {
+          localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        } catch {}
+        hideAuth();
+        void refresh({ initial: true });
+      } catch {
+        authEls.error.textContent = "无法连接服务器，请稍后再试";
+      } finally {
+        setAuthBusy(false);
+      }
+    });
+
     renderDateOptions();
-    if (restoreStateCache()) {
-      ensureSelected();
-      renderCompletedBadge();
-      render();
+    if (sessionToken()) {
+      if (restoreStateCache()) {
+        ensureSelected();
+        renderCompletedBadge();
+        render();
+      } else {
+        updateInteractionState();
+      }
+      void refresh({ initial: true });
     } else {
       updateInteractionState();
+      showAuth();
     }
-    void refresh({ initial: true });
 
     async function refresh(options = {}) {
       const initial = options.initial === true;
@@ -2619,6 +2804,7 @@
         render();
         setStatus("已同步");
       } catch (error) {
+        if (error.unauthorized) return;
         if (initial) {
           setReadOnly(true);
           setStatus(
@@ -4661,19 +4847,21 @@
     }
 
     async function apiGet(path) {
+      const token = sessionToken();
       const response = await fetch(API_BASE + path, {
-        headers: { "X-Todo-Token": API_TOKEN },
+        headers: token ? { "X-Todo-Session": token } : {},
         cache: "no-store",
       });
       return parseApiResponse(response);
     }
 
     async function apiPost(path, body) {
+      const token = sessionToken();
       const response = await fetch(API_BASE + path, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Todo-Token": API_TOKEN,
+          ...(token ? { "X-Todo-Session": token } : {}),
         },
         body: JSON.stringify(body),
       });
@@ -4682,6 +4870,12 @@
 
     async function parseApiResponse(response) {
       const data = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        handleSessionExpired();
+        const error = new Error(data.error || "unauthorized");
+        error.unauthorized = true;
+        throw error;
+      }
       if (!response.ok) throw new Error(data.error || response.statusText || "请求失败");
       return data;
     }
