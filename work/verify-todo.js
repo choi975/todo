@@ -35,7 +35,7 @@ const SHOPPING_GROUP = "__shopping__";
 const DAILY_TASK_PREFIX = "（每日任务）";
 
 const html = fs.readFileSync(sourceHtml, "utf8").replace(
-  'const API_BASE = location.protocol === "file:"\n      ? "https://todo.choi975.workers.dev"\n      : location.origin;',
+  'const API_BASE = location.protocol === "file:" || location.hostname.endsWith(".github.io")\n      ? "https://todo.choi975.workers.dev"\n      : location.origin;',
   'const API_BASE = "http://127.0.0.1:19087";'
 );
 fs.writeFileSync(testHtml, html, "utf8");
@@ -325,6 +325,7 @@ const server = http.createServer((req, res) => {
   const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   const browser = await chromium.launch({ headless: true, executablePath: chromePath });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -730,6 +731,7 @@ const server = http.createServer((req, res) => {
   await page.screenshot({ path: screenshotPath, fullPage: true });
 
   const mobilePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await mobilePage.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   await mobilePage.goto(`file://${testHtml.replaceAll("\\", "/")}`);
   await mobilePage.waitForSelector(".todo.selected", { timeout: 5000 });
   await mobilePage.getByRole("button", { name: "打开累计记录" }).click();

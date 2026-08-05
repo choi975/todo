@@ -90,6 +90,7 @@
       flex: 0 0 auto;
     }
 
+    .home-button,
     .add-button,
     .completed-button,
     .daily-button {
@@ -103,6 +104,7 @@
       place-items: center;
       cursor: pointer;
       box-shadow: 0 7px 18px rgba(42, 34, 24, 0.1);
+      text-decoration: none;
     }
 
     .add-button {
@@ -113,6 +115,8 @@
       position: relative;
     }
 
+    .home-button:hover,
+    .home-button:focus-visible,
     .add-button:hover,
     .add-button:focus-visible,
     .completed-button:hover,
@@ -123,6 +127,7 @@
       outline: 3px solid rgba(37, 109, 133, 0.18);
     }
 
+    .home-button svg,
     .add-button svg,
     .completed-button svg,
     .daily-button svg {
@@ -985,6 +990,7 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .home-button,
     .add-button,
     .completed-button,
     .daily-button {
@@ -996,6 +1002,7 @@
       transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
     }
 
+    .home-button:hover,
     .add-button:hover,
     .completed-button:hover,
     .daily-button:hover {
@@ -2114,12 +2121,34 @@
 
       .topbar {
         top: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 8px;
+        row-gap: 8px;
         padding: 10px 0 12px;
         border-radius: 0;
       }
 
+      .brand {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .topbar-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
       .counter-shortcuts {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-content: flex-start;
         gap: 4px;
+      }
+
+      .counter-shortcuts:empty {
+        display: none;
       }
 
       .counter-shortcut {
@@ -2336,6 +2365,13 @@
       </div>
       <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录"></div>
       <div class="topbar-actions">
+        <a class="home-button" href="https://choi975.github.io/index" title="前往主页" aria-label="前往主页">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 5h5v5"></path>
+            <path d="M10 14 19 5"></path>
+            <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path>
+          </svg>
+        </a>
         <button class="daily-button" id="openDaily" type="button" title="每日任务" aria-label="打开每日任务">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 2v4"></path>
