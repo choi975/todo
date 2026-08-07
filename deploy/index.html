@@ -2556,6 +2556,7 @@
     const SHOPPING_GROUP = "__shopping__";
     const STATE_CACHE_KEY = "todo-state-cache-v1";
     const STATE_CACHE_VERSION = 1;
+    const COUNTER_SELECTION_KEY = "todo-counter-selection-v1";
     const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
     const COUNTER_COLORS = ["#256d85", "#b5672e", "#7562a8", "#2f7d4f", "#a04f58"];
     const state = {
@@ -2567,6 +2568,7 @@
       counterItems: [],
       counterRecords: [],
       counterSelectedIds: [],
+      counterSelectionMap: loadCounterSelection(),
       counterPeriod: "week",
       counterCursor: toLocalDateString(new Date()),
       counterItemPinned: true,
@@ -2831,8 +2833,7 @@
         state.dailyTasks = Array.isArray(data.dailyTasks) ? data.dailyTasks : [];
         state.completedCount = Number(data.completedCount) || 0;
         state.counterItems = (Array.isArray(data.counterItems) ? data.counterItems : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
-        state.counterSelectedIds = state.counterSelectedIds.filter((id) => state.counterItems.some((item) => item.id === id));
-        if (!state.counterSelectedIds.length) state.counterSelectedIds = state.counterItems.map((item) => item.id);
+        syncCounterSelection();
         setReadOnly(false);
         state.cacheLoaded = false;
         state.cacheSavedAt = new Date().toISOString();
@@ -3001,6 +3002,7 @@
     async function loadCounterData() {
       if (state.readOnly) {
         state.counterRecords = [];
+        syncCounterSelection();
         renderCounterView();
         return;
       }
@@ -3016,8 +3018,7 @@
             item.todayTotal = state.counterRecords.filter((record) => record.itemId === item.id && record.recordedDate === state.today).reduce((sum, record) => sum + Number(record.amount || 0), 0);
           }
         }
-        state.counterSelectedIds = state.counterSelectedIds.filter((id) => state.counterItems.some((item) => item.id === id));
-        if (!state.counterSelectedIds.length) state.counterSelectedIds = state.counterItems.map((item) => item.id);
+        syncCounterSelection();
         renderCounterShortcuts();
         renderCounterView();
       } catch (error) {
@@ -3052,7 +3053,10 @@
     function handleCounterFilterClick(event) {
       const all = event.target.closest("[data-counter-select-all]");
       if (all) {
-        state.counterSelectedIds = state.counterSelectedIds.length === state.counterItems.length ? [] : state.counterItems.map((item) => item.id);
+        const selectAll = state.counterSelectedIds.length !== state.counterItems.length;
+        state.counterSelectedIds = selectAll ? state.counterItems.map((item) => item.id) : [];
+        for (const item of state.counterItems) state.counterSelectionMap[item.id] = selectAll;
+        saveCounterSelection();
         renderCounterView();
         return;
       }
@@ -3066,7 +3070,10 @@
       const toggle = event.target.closest("[data-counter-toggle]");
       if (toggle) {
         const id = toggle.dataset.counterToggle;
+        const checked = state.counterSelectedIds.includes(id);
+        state.counterSelectionMap[id] = !checked;
         state.counterSelectedIds = state.counterSelectedIds.includes(id) ? state.counterSelectedIds.filter((entry) => entry !== id) : state.counterSelectedIds.concat(id);
+        saveCounterSelection();
         renderCounterView();
         return;
       }
@@ -3280,7 +3287,7 @@
       const payload = { id, name, color: els.counterItemColor.value, pinned: state.counterItemPinned };
       try {
         const saved = await apiPost(id ? "/api/counter-items/update" : "/api/counter-items", payload);
-        if (!id && saved?.id) state.counterSelectedIds = state.counterSelectedIds.concat(saved.id);
+        if (!id && saved?.id) state.counterSelectionMap[saved.id] = true;
         closeCounterItem({ returnFocus: false });
         await refresh();
         if (isCounterOpen()) await loadCounterData();
@@ -3296,7 +3303,8 @@
       if (!item || !window.confirm(`删除“${item.name}”？删除后不再显示这个记录项，但历史记录仍然保留。`)) return;
       try {
         await apiPost("/api/counter-items/archive", { id });
-        state.counterSelectedIds = state.counterSelectedIds.filter((entry) => entry !== id);
+        delete state.counterSelectionMap[id];
+        saveCounterSelection();
         await refresh();
         await loadCounterData();
         setStatus("记录项已删除，历史记录仍保留");
@@ -4924,6 +4932,34 @@
       } catch {
         return {};
       }
+    }
+
+    function loadCounterSelection() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(COUNTER_SELECTION_KEY) || "null");
+        if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
+      } catch {
+        // Storage may be disabled; fall back to default behavior.
+      }
+      return {};
+    }
+
+    function saveCounterSelection() {
+      try {
+        localStorage.setItem(COUNTER_SELECTION_KEY, JSON.stringify(state.counterSelectionMap));
+      } catch {
+        // Storage may be disabled or full; the current session still works.
+      }
+    }
+
+    function syncCounterSelection() {
+      const known = new Set(state.counterItems.map((item) => item.id));
+      for (const id of Object.keys(state.counterSelectionMap)) {
+        if (!known.has(id)) delete state.counterSelectionMap[id];
+      }
+      state.counterSelectedIds = state.counterItems
+        .filter((item) => state.counterSelectionMap[item.id] !== false)
+        .map((item) => item.id);
     }
 
     function saveCollapsed() {
