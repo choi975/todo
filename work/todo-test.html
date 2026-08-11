@@ -2538,7 +2538,7 @@
         <div><label id="counterRecordTabsLabel">记录项</label><div class="counter-record-tabs" id="counterRecordTabs" role="tablist" aria-labelledby="counterRecordTabsLabel"></div></div>
         <div class="counter-calendar-summary" id="counterCalendarSummary"></div>
         <div class="counter-calendar-toolbar"><button id="counterCalendarPrev" type="button" aria-label="上一个月">‹</button><strong id="counterCalendarMonthLabel"></strong><button id="counterCalendarNext" type="button" aria-label="下一个月">›</button></div>
-        <div class="counter-calendar-weekdays" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+        <div class="counter-calendar-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
         <div class="counter-calendar-grid" id="counterCalendarGrid"></div>
         <div class="counter-calendar-footer"><button class="counter-primary" id="cancelCounterRecord" type="button">完成</button></div>
       </div>
@@ -2556,6 +2556,7 @@
     const STATE_CACHE_VERSION = 1;
     const COUNTER_SELECTION_KEY = "todo-counter-selection-v1";
     const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+    const CALENDAR_WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
     const COUNTER_COLORS = ["#256d85", "#b5672e", "#7562a8", "#2f7d4f", "#a04f58"];
     const state = {
       today: toLocalDateString(new Date()),
@@ -3383,7 +3384,7 @@
       for (const record of state.counterCalendarRecords) {
         totals.set(record.recordedDate, (totals.get(record.recordedDate) || 0) + Number(record.amount || 0));
       }
-      const firstWeekday = month.getDay();
+      const firstWeekday = (month.getDay() + 6) % 7;
       const days = parseDate(range.to).getDate();
       const cells = Array.from({ length: firstWeekday }, () => '<div class="counter-calendar-blank" aria-hidden="true"></div>');
       for (let day = 1; day <= days; day += 1) {
@@ -4309,14 +4310,14 @@
       els.checkinTitle.textContent = stripDailyTaskPrefix(task.text);
       els.checkinSummary.textContent = `打卡统计：${formatDailyTaskStats(task)}，可补打卡范围：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`;
 
-      for (const name of WEEKDAYS) {
+      for (const name of CALENDAR_WEEKDAYS) {
         const weekday = document.createElement("div");
         weekday.className = "checkin-weekday";
         weekday.textContent = name;
         els.checkinGrid.appendChild(weekday);
       }
 
-      const leading = parseDate(startDate).getDay();
+      const leading = (parseDate(startDate).getDay() + 6) % 7;
       for (let index = 0; index < leading; index += 1) {
         const spacer = document.createElement("div");
         spacer.className = "checkin-spacer";
