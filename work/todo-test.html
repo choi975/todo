@@ -2342,6 +2342,644 @@
       font-size: 14px;
       min-height: 18px;
     }
+
+    /* Approved H workbench layout. */
+    :root {
+      --wb-bg: #edf0f1;
+      --wb-surface: #ffffff;
+      --wb-surface-alt: #f6f8f9;
+      --wb-ink: #202522;
+      --wb-muted: #78807b;
+      --wb-line: #dbe0e2;
+      --wb-line-strong: #cbd2d5;
+      --wb-accent: #536878;
+    }
+
+    body {
+      background: var(--wb-bg);
+      color: var(--wb-ink);
+    }
+
+    .app {
+      width: min(1800px, calc(100vw - 32px));
+      padding: 12px 0 24px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(210px, 270px) minmax(360px, 1fr) auto;
+      gap: 22px;
+      min-height: 58px;
+      padding: 6px 0 10px;
+      background: linear-gradient(180deg, rgba(237, 240, 241, .98), rgba(237, 240, 241, .9));
+    }
+
+    .brand {
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 26px;
+      letter-spacing: 0;
+    }
+
+    .date-stamp {
+      font-size: 11px;
+    }
+
+    .quick-add {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) 34px;
+      align-items: center;
+      gap: 10px;
+      width: min(760px, 100%);
+      height: 44px;
+      justify-self: center;
+      border: 1px solid var(--wb-line-strong);
+      border-radius: 7px;
+      padding: 0 5px 0 13px;
+      background: var(--wb-surface);
+      color: #53605a;
+      box-shadow: 0 5px 18px rgba(34, 42, 38, .045);
+    }
+
+    .quick-add:focus-within {
+      border-color: var(--wb-accent);
+      box-shadow: 0 0 0 3px rgba(83, 104, 120, .14);
+    }
+
+    .quick-add > svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .quick-add input {
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--wb-ink);
+    }
+
+    .quick-add input::placeholder {
+      color: #909792;
+    }
+
+    .quick-add button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 0;
+      border-radius: 5px;
+      background: #29302c;
+      color: #fff;
+    }
+
+    .quick-add button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .topbar-actions {
+      gap: 7px;
+    }
+
+    .counter-shortcuts[hidden] {
+      display: none !important;
+    }
+
+    .home-button,
+    .add-button,
+    .completed-button {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      border-color: var(--wb-line);
+      box-shadow: none;
+    }
+
+    .status {
+      min-height: 22px;
+      padding: 2px 2px 6px;
+    }
+
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: minmax(330px, 35fr) minmax(390px, 41fr) minmax(290px, 24fr);
+      gap: 12px;
+      height: max(690px, calc(100vh - 116px));
+      min-height: 690px;
+    }
+
+    .workbench-center,
+    .workbench-right {
+      display: grid;
+      min-width: 0;
+      min-height: 0;
+      gap: 12px;
+    }
+
+    .workbench-center {
+      grid-template-rows: minmax(380px, 1.55fr) minmax(260px, 1fr);
+    }
+
+    .workbench-right {
+      grid-template-rows: minmax(240px, 1.12fr) minmax(220px, 1fr) minmax(180px, .86fr);
+    }
+
+    .workbench-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--wb-line-strong);
+      border-radius: 7px;
+      background: var(--wb-surface);
+      box-shadow: 0 8px 24px rgba(34, 42, 38, .055);
+    }
+
+    .workbench-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 54px;
+      border-bottom: 1px solid var(--wb-line);
+      padding: 0 14px;
+      background: var(--wb-surface-alt);
+    }
+
+    .workbench-panel-head > div {
+      display: flex;
+      align-items: baseline;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .workbench-panel-head h2 {
+      margin: 0;
+      color: var(--wb-ink);
+      font-size: 16px;
+      font-weight: 760;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .workbench-panel-head span {
+      overflow: hidden;
+      color: var(--wb-muted);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .panel-icon-button {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--wb-line);
+      border-radius: 5px;
+      background: #fff;
+      color: #53605a;
+    }
+
+    .panel-icon-button:hover,
+    .panel-icon-button:focus-visible {
+      border-color: var(--wb-accent);
+      outline: 3px solid rgba(83, 104, 120, .13);
+    }
+
+    .panel-icon-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .workbench-scroll {
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      scrollbar-color: #bcc5c0 transparent;
+      scrollbar-width: thin;
+    }
+
+    .workbench-scroll::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    .workbench-scroll::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: #bcc5c0;
+    }
+
+    .prefix-groups {
+      display: grid;
+      align-content: start;
+      padding: 5px 14px 12px;
+    }
+
+    .prefix-group {
+      display: grid;
+      grid-template-columns: minmax(76px, 92px) minmax(0, 1fr);
+      border-bottom: 1px solid var(--wb-line);
+    }
+
+    .prefix-group:last-child {
+      border-bottom: 0;
+    }
+
+    .prefix-label {
+      padding: 10px 9px 8px 0;
+      border-right: 1px solid #e6e9e7;
+    }
+
+    .prefix-label strong,
+    .prefix-label span {
+      display: block;
+    }
+
+    .prefix-label strong {
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .prefix-label span {
+      margin-top: 3px;
+      color: var(--wb-muted);
+      font-size: 9px;
+    }
+
+    .prefix-tasks {
+      display: grid;
+      min-width: 0;
+      padding: 3px 0 3px 11px;
+    }
+
+    .workbench-list {
+      display: grid;
+      align-content: start;
+      padding: 4px 13px 10px;
+    }
+
+    .workbench-list .todo,
+    .prefix-tasks .todo,
+    .upcoming-task-list .todo {
+      grid-template-columns: 24px minmax(0, 1fr);
+      min-height: 48px;
+      border-bottom: 1px solid #e7e9e7;
+      border-radius: 0;
+      padding: 4px 70px 4px 0;
+    }
+
+    .prefix-tasks .todo {
+      min-height: 43px;
+      padding-right: 0;
+    }
+
+    .shopping-list .todo {
+      min-height: 38px;
+    }
+
+    .workbench-list .todo:last-child,
+    .prefix-tasks .todo:last-child,
+    .upcoming-task-list .todo:last-child {
+      border-bottom: 0;
+    }
+
+    .workbench-list .todo:hover,
+    .prefix-tasks .todo:hover,
+    .upcoming-task-list .todo:hover {
+      background: #f7f9f8;
+    }
+
+    .workbench-focus-todo {
+      margin-top: 6px;
+      border: 1px solid #cbd1cd !important;
+      border-radius: 5px !important;
+      background: #eff2f0;
+      padding-left: 9px !important;
+    }
+
+    .workbench-list .checkbox,
+    .prefix-tasks .checkbox,
+    .upcoming-task-list .checkbox {
+      width: 19px;
+      height: 19px;
+      border-radius: 4px;
+    }
+
+    .workbench-list .todo-text,
+    .prefix-tasks .todo-text,
+    .upcoming-task-list .todo-text {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .workbench-task-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workbench-task-meta {
+      overflow: hidden;
+      color: var(--wb-muted);
+      font-size: 9px;
+      font-weight: 400;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workbench-list .todo-action,
+    .prefix-tasks .todo-action,
+    .upcoming-task-list .todo-action {
+      border-radius: 5px;
+      box-shadow: none;
+    }
+
+    .upcoming-groups {
+      display: grid;
+      align-content: start;
+      padding: 0 14px 12px;
+    }
+
+    .upcoming-day {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      border-bottom: 1px solid var(--wb-line);
+    }
+
+    .upcoming-day:last-child {
+      border-bottom: 0;
+    }
+
+    .upcoming-day-label {
+      padding: 11px 9px 8px 0;
+      border-right: 1px solid #e6e9e7;
+    }
+
+    .upcoming-day-label strong,
+    .upcoming-day-label span {
+      display: block;
+    }
+
+    .upcoming-day-label strong {
+      font-size: 12px;
+    }
+
+    .upcoming-day-label span {
+      margin-top: 3px;
+      color: var(--wb-muted);
+      font-size: 9px;
+    }
+
+    .upcoming-task-list {
+      display: grid;
+      min-width: 0;
+      padding: 3px 0 3px 11px;
+    }
+
+    .workbench-empty {
+      display: grid;
+      min-height: 94px;
+      place-items: center;
+      padding: 16px;
+      color: var(--wb-muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .daily-home-list {
+      display: grid;
+      align-content: start;
+      padding: 3px 13px 10px;
+    }
+
+    .daily-home-row {
+      display: grid;
+      grid-template-columns: 21px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      border-bottom: 1px solid #e7e9e7;
+    }
+
+    .daily-home-row:last-child {
+      border-bottom: 0;
+    }
+
+    .daily-home-check {
+      display: grid;
+      width: 19px;
+      height: 19px;
+      place-items: center;
+      border: 1.5px solid #96a19b;
+      border-radius: 4px;
+      background: #fff;
+      color: #fff;
+    }
+
+    .daily-home-check.checked {
+      border-color: #536878;
+      background: #536878;
+    }
+
+    .daily-home-check.checked::after {
+      content: "✓";
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .daily-home-copy {
+      min-width: 0;
+    }
+
+    .daily-home-copy strong,
+    .daily-home-copy small {
+      display: block;
+    }
+
+    .daily-home-copy strong {
+      overflow: hidden;
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .daily-home-copy small {
+      margin-top: 2px;
+      color: var(--wb-muted);
+      font-size: 9px;
+    }
+
+    .daily-home-rate {
+      color: var(--wb-muted);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .counters-home-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-height: 0;
+    }
+
+    .counter-home-item {
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 5px;
+      min-width: 0;
+      border-right: 1px solid #e0e4e1;
+      padding: 8px 4px;
+    }
+
+    .counter-home-item:last-child {
+      border-right: 0;
+    }
+
+    .counter-home-item span {
+      overflow: hidden;
+      max-width: 100%;
+      color: var(--wb-muted);
+      font-size: 9px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .counter-home-item strong {
+      font-size: 24px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .counter-home-item button {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #939c96;
+      border-radius: 50%;
+      background: transparent;
+      color: #39433d;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .counter-home-item button:hover,
+    .counter-home-item button:focus-visible {
+      border-color: var(--wb-accent);
+      background: #eef2f4;
+      outline: 3px solid rgba(83, 104, 120, .13);
+    }
+
+    body.read-only .quick-add,
+    body.read-only .daily-home-check,
+    body.read-only .counter-home-item button {
+      opacity: .5;
+    }
+
+    @media (max-width: 1120px) {
+      .app {
+        width: min(100vw - 24px, 1100px);
+      }
+
+      .topbar {
+        grid-template-columns: minmax(180px, 230px) minmax(280px, 1fr) auto;
+        gap: 12px;
+      }
+
+      .workbench-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        height: auto;
+      }
+
+      .prefix-panel,
+      .workbench-center {
+        height: 720px;
+      }
+
+      .workbench-right {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: 320px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        width: min(100vw - 16px, 700px);
+        padding-top: 4px;
+      }
+
+      .topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .brand {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .topbar-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .quick-add {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      .home-button {
+        display: none;
+      }
+
+      .workbench-grid {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .prefix-panel,
+      .workbench-center,
+      .workbench-right {
+        width: 100%;
+        height: auto;
+      }
+
+      .prefix-panel {
+        min-height: 560px;
+      }
+
+      .workbench-center,
+      .workbench-right {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .today-panel,
+      .upcoming-panel,
+      .shopping-panel,
+      .daily-home-panel,
+      .counters-home-panel {
+        min-height: 300px;
+      }
+
+      .counters-home-list {
+        min-height: 180px;
+      }
+
+      .prefix-group,
+      .upcoming-day {
+        grid-template-columns: 68px minmax(0, 1fr);
+      }
+    }
   </style>
 </head>
 <body>
@@ -2363,17 +3001,17 @@
         <h1>Todo</h1>
         <div class="date-stamp" id="todayLabel"></div>
       </div>
-      <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录"></div>
-      <div class="topbar-actions">
-        <button class="daily-button" id="openDaily" type="button" title="每日任务" aria-label="打开每日任务">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 2v4"></path>
-            <path d="M16 2v4"></path>
-            <rect x="3" y="4" width="18" height="17" rx="2"></rect>
-            <path d="M3 10h18"></path>
-            <path d="m8 15 2 2 5-5"></path>
-          </svg>
+      <form class="quick-add" id="quickForm" aria-label="快速新建任务">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 7h12"></path><path d="M6 12h8"></path><path d="M6 17h5"></path>
+        </svg>
+        <input id="quickText" autocomplete="off" maxlength="240" placeholder="添加一个任务…" aria-label="任务内容">
+        <button id="quickSubmit" type="submit" title="添加任务" aria-label="添加任务">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
         </button>
+      </form>
+      <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录" hidden></div>
+      <div class="topbar-actions">
         <a class="home-button" href="https://choi975.github.io/index" title="前往主页" aria-label="前往主页">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 5h5v5"></path>
@@ -2397,7 +3035,60 @@
     </header>
 
     <div class="status" id="status" role="status" aria-live="polite"></div>
-    <section class="groups" id="groups" aria-label="待办日期分组"></section>
+    <section class="workbench-grid" aria-label="任务工作台">
+      <section class="workbench-panel prefix-panel" aria-labelledby="prefixTitle">
+        <header class="workbench-panel-head">
+          <div><h2 id="prefixTitle">前缀任务</h2><span id="prefixSummary"></span></div>
+        </header>
+        <div class="workbench-scroll prefix-groups" id="prefixGroups"></div>
+      </section>
+
+      <div class="workbench-center">
+        <section class="workbench-panel today-panel" aria-labelledby="workbenchTodayTitle">
+          <header class="workbench-panel-head">
+            <div><h2 id="workbenchTodayTitle">今天</h2><span id="todaySummary"></span></div>
+          </header>
+          <div class="workbench-scroll workbench-list" id="todayTodos"></div>
+        </section>
+
+        <section class="workbench-panel upcoming-panel" aria-labelledby="upcomingTitle">
+          <header class="workbench-panel-head">
+            <div><h2 id="upcomingTitle">未来 30 天</h2><span id="upcomingSummary"></span></div>
+          </header>
+          <div class="workbench-scroll upcoming-groups" id="upcomingGroups"></div>
+        </section>
+      </div>
+
+      <aside class="workbench-right" aria-label="购物、每日和累计任务">
+        <section class="workbench-panel shopping-panel" aria-labelledby="shoppingTitle">
+          <header class="workbench-panel-head">
+            <div><h2 id="shoppingTitle">购物清单</h2><span id="shoppingSummary"></span></div>
+          </header>
+          <div class="workbench-scroll workbench-list shopping-list" id="shoppingTodos"></div>
+        </section>
+
+        <section class="workbench-panel daily-home-panel" aria-labelledby="dailyHomeTitle">
+          <header class="workbench-panel-head">
+            <div><h2 id="dailyHomeTitle">每日任务</h2><span id="dailyHomeSummary"></span></div>
+            <button class="panel-icon-button" id="openDaily" type="button" title="管理每日任务" aria-label="打开每日任务管理">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.04.08h-4l-.04-.08a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.04v-4L4 9.92a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.04-.08h4l.04.08a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.38.31.73.6 1l.08.04v4L20 14.08c-.29.27-.5.62-.6 1Z"></path></svg>
+            </button>
+          </header>
+          <div class="workbench-scroll daily-home-list" id="workbenchDaily"></div>
+        </section>
+
+        <section class="workbench-panel counters-home-panel" aria-labelledby="countersHomeTitle">
+          <header class="workbench-panel-head">
+            <div><h2 id="countersHomeTitle">累计任务</h2><span>今天</span></div>
+            <button class="panel-icon-button" id="openCounterHome" type="button" title="查看累计统计" aria-label="打开累计统计">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"></path><path d="M10 19V5"></path><path d="M16 19v-7"></path><path d="M22 19V3"></path></svg>
+            </button>
+          </header>
+          <div class="counters-home-list" id="workbenchCounters"></div>
+        </section>
+      </aside>
+    </section>
+    <section class="groups" id="groups" hidden aria-hidden="true"></section>
   </main>
 
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -2598,6 +3289,21 @@
       groups: document.getElementById("groups"),
       status: document.getElementById("status"),
       todayLabel: document.getElementById("todayLabel"),
+      quickForm: document.getElementById("quickForm"),
+      quickText: document.getElementById("quickText"),
+      quickSubmit: document.getElementById("quickSubmit"),
+      prefixGroups: document.getElementById("prefixGroups"),
+      prefixSummary: document.getElementById("prefixSummary"),
+      todayTodos: document.getElementById("todayTodos"),
+      todaySummary: document.getElementById("todaySummary"),
+      upcomingGroups: document.getElementById("upcomingGroups"),
+      upcomingSummary: document.getElementById("upcomingSummary"),
+      shoppingTodos: document.getElementById("shoppingTodos"),
+      shoppingSummary: document.getElementById("shoppingSummary"),
+      workbenchDaily: document.getElementById("workbenchDaily"),
+      dailyHomeSummary: document.getElementById("dailyHomeSummary"),
+      workbenchCounters: document.getElementById("workbenchCounters"),
+      openCounterHome: document.getElementById("openCounterHome"),
       openDaily: document.getElementById("openDaily"),
       openCompleted: document.getElementById("openCompleted"),
       openNew: document.getElementById("openNew"),
@@ -2705,6 +3411,8 @@
       els.counterCalendarGrid.addEventListener("click", handleCounterCalendarClick);
     els.counterToastUndo.addEventListener("click", undoCounterRecord);
     els.counterShortcuts.addEventListener("click", handleCounterShortcutClick);
+    els.workbenchCounters.addEventListener("click", handleCounterShortcutClick);
+    els.openCounterHome.addEventListener("click", openCounter);
     els.counterFilters.addEventListener("click", handleCounterFilterClick);
     els.counterRecords.addEventListener("click", handleCounterRecordListClick);
     els.counterPeriods.addEventListener("click", handleCounterPeriodClick);
@@ -2717,6 +3425,7 @@
     els.counterColors.addEventListener("click", handleCounterColorClick);
     els.counterItemPinned.addEventListener("click", toggleCounterPinned);
     els.newForm.addEventListener("submit", submitNewItem);
+    els.quickForm.addEventListener("submit", submitQuickItem);
     document.addEventListener("keydown", handleKeys);
 
     const authEls = {
@@ -2863,24 +3572,241 @@
     function render() {
       renderCounterShortcuts();
       renderDailyTasks();
-      els.groups.innerHTML = "";
-      renderGroup({
-        key: SHOPPING_GROUP,
-        label: "购物清单",
-        todos: todosForGroup(SHOPPING_GROUP),
-        offset: null,
-      });
-      for (let offset = 0; offset < DAY_COUNT; offset++) {
-        const date = addDays(state.today, offset);
-        renderGroup({
-          key: date,
-          label: groupLabel(date, offset),
-          todos: todosForGroup(date),
-          offset,
-        });
-      }
+      renderWorkbenchPrefixes();
+      renderWorkbenchToday();
+      renderWorkbenchUpcoming();
+      renderWorkbenchShopping();
+      renderWorkbenchDaily();
+      renderWorkbenchCounters();
       focusEditingInput();
       updateInteractionState();
+    }
+
+    function prefixInfo(todo) {
+      if (!todo || todo.sourceDailyTaskId || todo.dueDate === SHOPPING_GROUP) return null;
+      const match = String(todo.text || "").match(/^([^:：]{1,48})[:：](?!\/\/)[\s]*(.+)$/);
+      if (!match) return null;
+      const label = match[1].trim();
+      const taskText = match[2].trim();
+      if (!label || !taskText) return null;
+      return { key: label.toLocaleLowerCase(), label, taskText };
+    }
+
+    function prefixGroupsForWorkbench() {
+      const groups = new Map();
+      const todos = state.todos
+        .filter((todo) => prefixInfo(todo))
+        .sort(sortTodos);
+      for (const todo of todos) {
+        const info = prefixInfo(todo);
+        if (!groups.has(info.key)) groups.set(info.key, { key: info.key, label: info.label, todos: [] });
+        groups.get(info.key).todos.push(todo);
+      }
+      return Array.from(groups.values());
+    }
+
+    function ordinaryTodosForDate(date) {
+      return state.todos
+        .filter((todo) => todo.dueDate === date && !todo.sourceDailyTaskId && !prefixInfo(todo))
+        .sort(sortTodos);
+    }
+
+    function shoppingTodosForWorkbench() {
+      return state.todos
+        .filter((todo) => todo.dueDate === SHOPPING_GROUP)
+        .sort(sortTodos);
+    }
+
+    function renderWorkbenchPrefixes() {
+      const groups = prefixGroupsForWorkbench();
+      const total = groups.reduce((sum, group) => sum + group.todos.length, 0);
+      els.prefixSummary.textContent = `${groups.length} 组 · ${total} 项 · 全部展开`;
+      els.prefixGroups.innerHTML = "";
+      if (!groups.length) {
+        appendWorkbenchEmpty(els.prefixGroups, "暂无前缀任务");
+        return;
+      }
+      for (const group of groups) {
+        const section = document.createElement("section");
+        section.className = "prefix-group";
+        section.setAttribute("aria-label", `${group.label} 前缀任务`);
+
+        const label = document.createElement("div");
+        label.className = "prefix-label";
+        const name = document.createElement("strong");
+        name.textContent = group.label;
+        const count = document.createElement("span");
+        count.textContent = `${group.todos.length} 项`;
+        label.append(name, count);
+
+        const list = document.createElement("div");
+        list.className = "prefix-tasks";
+        for (const todo of group.todos) {
+          const info = prefixInfo(todo);
+          list.appendChild(renderTodo(todo, {
+            draggable: false,
+            actions: false,
+            displayText: info?.taskText || todo.text,
+            meta: formatWorkbenchDueDate(todo.dueDate),
+          }));
+        }
+        section.append(label, list);
+        els.prefixGroups.appendChild(section);
+      }
+    }
+
+    function renderWorkbenchToday() {
+      const todos = ordinaryTodosForDate(state.today);
+      els.todaySummary.textContent = `${todos.length} 项`;
+      els.todayTodos.innerHTML = "";
+      configureWorkbenchDropList(els.todayTodos, state.today);
+      if (!todos.length) {
+        appendWorkbenchEmpty(els.todayTodos, "今天没有普通任务");
+        return;
+      }
+      todos.forEach((todo, index) => {
+        const row = renderTodo(todo, { meta: todo.createdAt ? "今天" : "" });
+        if (index === 0) row.classList.add("workbench-focus-todo");
+        els.todayTodos.appendChild(row);
+      });
+    }
+
+    function renderWorkbenchUpcoming() {
+      els.upcomingGroups.innerHTML = "";
+      let total = 0;
+      let populatedDays = 0;
+      for (let offset = 1; offset < DAY_COUNT; offset += 1) {
+        const date = addDays(state.today, offset);
+        const todos = ordinaryTodosForDate(date);
+        if (!todos.length) continue;
+        total += todos.length;
+        populatedDays += 1;
+
+        const section = document.createElement("section");
+        section.className = "upcoming-day";
+        const label = document.createElement("div");
+        label.className = "upcoming-day-label";
+        const name = document.createElement("strong");
+        name.textContent = formatWorkbenchDayLabel(date, offset);
+        const count = document.createElement("span");
+        count.textContent = `${todos.length} 项 · ${formatMonthDay(date)}`;
+        label.append(name, count);
+
+        const list = document.createElement("div");
+        list.className = "upcoming-task-list";
+        configureWorkbenchDropList(list, date);
+        for (const todo of todos) list.appendChild(renderTodo(todo, { meta: formatMonthDay(date) }));
+        section.append(label, list);
+        els.upcomingGroups.appendChild(section);
+      }
+      els.upcomingSummary.textContent = `${total} 项 · ${populatedDays} 天有安排`;
+      if (!total) appendWorkbenchEmpty(els.upcomingGroups, "未来 30 天没有普通任务");
+    }
+
+    function renderWorkbenchShopping() {
+      const todos = shoppingTodosForWorkbench();
+      els.shoppingSummary.textContent = `${todos.length} 项`;
+      els.shoppingTodos.innerHTML = "";
+      configureWorkbenchDropList(els.shoppingTodos, SHOPPING_GROUP);
+      if (!todos.length) {
+        appendWorkbenchEmpty(els.shoppingTodos, "购物清单为空");
+        return;
+      }
+      for (const todo of todos) els.shoppingTodos.appendChild(renderTodo(todo));
+    }
+
+    function renderWorkbenchDaily() {
+      const tasks = [...state.dailyTasks].sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
+      const completedToday = tasks.filter((task) => Array.isArray(task.checkins) && task.checkins.includes(state.today)).length;
+      els.dailyHomeSummary.textContent = `${completedToday}/${tasks.length}`;
+      els.workbenchDaily.innerHTML = "";
+      if (!tasks.length) {
+        appendWorkbenchEmpty(els.workbenchDaily, "暂无每日任务");
+        return;
+      }
+      for (const task of tasks) {
+        const checked = Array.isArray(task.checkins) && task.checkins.includes(state.today);
+        const row = document.createElement("div");
+        row.className = "daily-home-row";
+        const check = document.createElement("button");
+        check.className = "daily-home-check" + (checked ? " checked" : "");
+        check.type = "button";
+        check.disabled = state.readOnly;
+        check.setAttribute("aria-pressed", String(checked));
+        check.setAttribute("aria-label", `${stripDailyTaskPrefix(task.text)} ${checked ? "今日已完成" : "今日未完成"}`);
+        check.addEventListener("click", () => void toggleDailyCheckin(task, state.today, !checked));
+
+        const copy = document.createElement("div");
+        copy.className = "daily-home-copy";
+        const name = document.createElement("strong");
+        name.textContent = stripDailyTaskPrefix(task.text);
+        const stats = document.createElement("small");
+        stats.textContent = formatDailyTaskStats(task).replace(/\s+/g, " ");
+        copy.append(name, stats);
+
+        const rate = document.createElement("span");
+        rate.className = "daily-home-rate";
+        rate.textContent = checked ? "已完成" : "待完成";
+        row.append(check, copy, rate);
+        els.workbenchDaily.appendChild(row);
+      }
+    }
+
+    function renderWorkbenchCounters() {
+      const active = state.counterItems
+        .filter((item) => Number(item.active ?? 1))
+        .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
+      const pinned = active.filter((item) => Number(item.pinned));
+      const items = (pinned.length ? pinned : active).slice(0, 3);
+      els.workbenchCounters.innerHTML = "";
+      if (!items.length) {
+        appendWorkbenchEmpty(els.workbenchCounters, "暂无累计任务");
+        return;
+      }
+      for (const item of items) {
+        const row = document.createElement("div");
+        row.className = "counter-home-item";
+        const label = document.createElement("span");
+        label.textContent = item.name;
+        const total = document.createElement("strong");
+        total.textContent = formatCounterValue(Number(item.todayTotal) || 0);
+        const add = document.createElement("button");
+        add.type = "button";
+        add.disabled = state.readOnly;
+        add.dataset.counterId = item.id;
+        add.textContent = "+1";
+        add.setAttribute("aria-label", `${item.name}增加一次`);
+        row.append(label, total, add);
+        els.workbenchCounters.appendChild(row);
+      }
+    }
+
+    function configureWorkbenchDropList(list, date) {
+      list.dataset.date = date;
+      list.ondragover = handleDragOver;
+      list.ondrop = handleDrop;
+    }
+
+    function appendWorkbenchEmpty(container, message) {
+      const empty = document.createElement("div");
+      empty.className = "workbench-empty";
+      empty.textContent = message;
+      container.appendChild(empty);
+    }
+
+    function formatWorkbenchDueDate(date) {
+      const offset = daysFromToday(date);
+      if (offset === 0) return "今天";
+      if (offset === 1) return "明天";
+      if (offset === 2) return "后天";
+      return formatMonthDay(date);
+    }
+
+    function formatWorkbenchDayLabel(date, offset) {
+      if (offset === 1) return "明天";
+      if (offset === 2) return "后天";
+      const parsed = parseDate(date);
+      return `周${WEEKDAYS[parsed.getDay()]}`;
     }
 
     function renderCompletedBadge() {
@@ -2932,6 +3858,7 @@
         });
         if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + 1;
         renderCounterShortcuts();
+        renderWorkbenchCounters();
         showCounterToast(item, record);
         if (isCounterOpen()) await loadCounterData();
         setStatus("已记录");
@@ -2970,6 +3897,7 @@
           await refresh();
         }
         renderCounterShortcuts();
+        renderWorkbenchCounters();
         if (isCounterOpen()) await loadCounterData();
         if (isCounterRecordOpen()) await loadCounterCalendar();
         setStatus("已撤销记录");
@@ -2993,8 +3921,7 @@
       closeCounterItem({ returnFocus: false });
       closeCounterRecord({ returnFocus: false });
       if (options.returnFocus !== false) {
-        const manage = els.counterShortcuts.querySelector("[data-counter-manage]");
-        if (manage) manage.focus();
+        if (els.openCounterHome) els.openCounterHome.focus();
       }
     }
 
@@ -3520,15 +4447,16 @@
       els.groups.appendChild(day);
     }
 
-    function renderTodo(todo) {
+    function renderTodo(todo, options = {}) {
       const row = document.createElement("div");
       const isEditing = todo.id === state.editingId;
       row.className = "todo";
+      if (options.className) row.classList.add(options.className);
       if (isSelectedTodo(todo.id)) row.classList.add("selected");
       if (todo.id === state.draggingId) row.classList.add("dragging");
       if (isEditing) row.classList.add("editing");
       row.dataset.id = todo.id;
-      row.draggable = !state.readOnly && !isEditing;
+      row.draggable = options.draggable !== false && !state.readOnly && !isEditing;
       row.tabIndex = -1;
       row.addEventListener("click", (event) => {
         if (!event.target.closest(".checkbox") && !event.target.closest(".todo-input") && !event.target.closest(".todo-action")) selectTodo(todo.id);
@@ -3607,8 +4535,19 @@
 
       const text = document.createElement("div");
       text.className = "todo-text";
-      text.textContent = todo.text;
+      const label = document.createElement("span");
+      label.className = "workbench-task-label";
+      label.textContent = options.displayText || todo.text;
+      text.appendChild(label);
+      if (options.meta) {
+        const meta = document.createElement("small");
+        meta.className = "workbench-task-meta";
+        meta.textContent = options.meta;
+        text.appendChild(meta);
+      }
       row.appendChild(text);
+
+      if (options.actions === false) return row;
 
       const actions = document.createElement("div");
       actions.className = "todo-actions";
@@ -3948,11 +4887,11 @@
       }
       if (event.key === "ArrowUp") moveSelection(-1);
       if (event.key === "ArrowDown") moveSelection(1);
-      if (event.key === "ArrowLeft" && selectedTodoId() && canWrite()) moveSelectedTodo("up");
-      if (event.key === "ArrowRight" && selectedTodoId() && canWrite()) moveSelectedTodo("down");
-      if (event.key === " " && (isSelectedGroup() || canWrite())) activateSelected();
-      if (isPinShortcut && canWrite()) moveTodoToEdge(selectedTodoId(), "top");
-      if (isBottomShortcut && canWrite()) moveTodoToEdge(selectedTodoId(), "bottom");
+      if (event.key === "ArrowLeft" && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("up");
+      if (event.key === "ArrowRight" && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("down");
+      if (event.key === " " && canWrite()) activateSelected();
+      if (isPinShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "top");
+      if (isBottomShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "bottom");
       if (isCollapseShortcut) collapseSelectedTodoGroup();
     }
 
@@ -4027,21 +4966,43 @@
     }
 
     function activateSelected() {
-      if (isSelectedGroup()) {
-        toggleGroup(state.selected.key);
-        return;
-      }
       completeSelected(selectedTodoId());
     }
 
     function collapseSelectedTodoGroup() {
-      const todo = selectedTodo();
-      if (!todo) return;
-      const key = groupKeyForTodo(todo);
-      state.collapsed[key] = true;
-      saveCollapsed();
-      selectGroup(key, { renderNow: false });
-      render();
+      return;
+    }
+
+    async function submitQuickItem(event) {
+      event.preventDefault();
+      if (!canWrite() || state.loading) return;
+      const parsed = parseAutomaticNewItem(els.quickText.value);
+      const text = parsed.text;
+      const target = parsed.type || parsed.dueDate || state.today;
+      if (!text) {
+        els.quickText.focus();
+        return;
+      }
+      setStatus("创建中...");
+      try {
+        if (target === "daily") {
+          await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
+        } else if (target === "counter") {
+          await apiPost("/api/counter-items", {
+            name: text,
+            pinned: true,
+            color: COUNTER_COLORS[0],
+          });
+        } else {
+          await apiPost("/api/todos", { text, dueDate: target, today: state.today });
+        }
+        els.quickText.value = "";
+        await refresh();
+        els.quickText.focus();
+      } catch (error) {
+        setStatus("创建失败：" + error.message, true);
+        els.quickText.focus();
+      }
     }
 
     async function submitNewItem(event) {
@@ -4357,6 +5318,7 @@
       task.completedCount = task.checkins.length;
       task.totalCount = Math.max(0, daysBetween(task.startDate || state.today, state.today) + 1);
       renderDailyTasks();
+      renderWorkbenchDaily();
       renderCheckin();
       setStatus("保存中...");
       state.loading = true;
@@ -4481,25 +5443,30 @@
     }
 
     function visibleTodos() {
-      const byDate = orderedDates().filter(({ date }) => !isCollapsed(date));
-      const visibleDates = new Set(byDate.map((item) => item.date));
-      return [...state.todos]
-        .filter((todo) => visibleDates.has(todo.dueDate) || (!isCollapsed(SHOPPING_GROUP) && todo.dueDate === SHOPPING_GROUP))
-        .sort(sortTodos);
+      return workbenchDisplayedTodos();
     }
 
     function navigationItems() {
-      const items = [groupSelection(SHOPPING_GROUP)];
-      if (!isCollapsed(SHOPPING_GROUP)) {
-        for (const todo of todosForGroup(SHOPPING_GROUP)) items.push(todoSelection(todo.id));
+      return workbenchDisplayedTodos().map((todo) => todoSelection(todo.id));
+    }
+
+    function workbenchDisplayedTodos() {
+      const todos = [];
+      const seen = new Set();
+      const append = (todo) => {
+        if (!todo || seen.has(todo.id)) return;
+        seen.add(todo.id);
+        todos.push(todo);
+      };
+      for (const group of prefixGroupsForWorkbench()) {
+        for (const todo of group.todos) append(todo);
       }
-      for (const { date } of orderedDates()) {
-        items.push(groupSelection(date));
-        if (!isCollapsed(date)) {
-          for (const todo of todosForGroup(date)) items.push(todoSelection(todo.id));
-        }
+      for (const todo of ordinaryTodosForDate(state.today)) append(todo);
+      for (let offset = 1; offset < DAY_COUNT; offset += 1) {
+        for (const todo of ordinaryTodosForDate(addDays(state.today, offset))) append(todo);
       }
-      return items;
+      for (const todo of shoppingTodosForWorkbench()) append(todo);
+      return todos;
     }
 
     function todoSelection(id) {
@@ -4661,7 +5628,7 @@
 
     function clearDropIndicator() {
       if (state.dropDate) {
-        const list = document.querySelector(`.todo-list[data-date="${CSS.escape(state.dropDate)}"]`);
+        const list = document.querySelector(`[data-date="${CSS.escape(state.dropDate)}"]`);
         if (list) list.classList.remove("drop-empty");
       }
       if (state.dropTargetId) {
@@ -4827,6 +5794,9 @@
       els.openNew.disabled = state.readOnly;
       els.openNew.title = state.readOnly ? "等待同步完成后可新建" : "新建（Alt+N）";
       els.openNew.setAttribute("aria-label", state.readOnly ? "等待同步完成后可新建" : "新建待办事项");
+      els.quickText.disabled = state.readOnly;
+      els.quickSubmit.disabled = state.readOnly;
+      els.quickText.placeholder = state.readOnly ? "同步完成后可添加任务" : "添加一个任务…";
       els.dailySubmit.disabled = state.readOnly;
       els.cancelDailyEdit.disabled = state.readOnly;
       els.dailyText.disabled = state.readOnly;

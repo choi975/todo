@@ -13,7 +13,7 @@ const tomorrow = addDays(today, 1);
 const cacheKey = "todo-state-cache-v1";
 
 const html = fs.readFileSync(sourceHtml, "utf8").replace(
-  'const API_BASE = location.protocol === "file:"\n      ? "https://todo.choi975.workers.dev"\n      : location.origin;',
+  'const API_BASE = location.protocol === "file:" || location.hostname.endsWith(".github.io")\n      ? "https://todo.choi975.workers.dev"\n      : location.origin;',
   `const API_BASE = "http://127.0.0.1:${port}";`
 );
 fs.writeFileSync(testHtml, html, "utf8");
@@ -67,36 +67,44 @@ const server = http.createServer(async (request, response) => {
 
 (async () => {
   await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
-  const browser = await chromium.launch({ headless: true, executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" });
+  const browserPath = [
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  ].find((candidate) => fs.existsSync(candidate));
+  const browser = await chromium.launch({ headless: true, executablePath: browserPath });
   const context = await browser.newContext();
   await context.addInitScript(({ key, value }) => {
     localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem("todo-session-token", "test-session");
   }, { key: cacheKey, value: cachedState });
   const page = await context.newPage();
   await page.goto(`file://${testHtml.replaceAll("\\", "/")}`);
 
-  await page.waitForFunction(() => Array.from(document.querySelectorAll(".todo-text")).some((node) => node.textContent === "缓存中的过期任务"), null, { timeout: 1000 });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll(".workbench-task-label")).some((node) => node.textContent === "缓存中的过期任务"), null, { timeout: 3000 });
   const cacheSnapshot = await page.evaluate(() => ({
     bodyReadOnly: document.body.classList.contains("read-only"),
     status: document.getElementById("status").textContent,
     newDisabled: document.getElementById("openNew").disabled,
-    texts: Array.from(document.querySelectorAll(".todo-text")).map((node) => node.textContent),
+    texts: Array.from(document.querySelectorAll(".workbench-task-label")).map((node) => node.textContent),
+    dailyTexts: Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).map((node) => node.textContent),
     checkboxDisabled: document.querySelector(".checkbox")?.disabled === true,
     cache: JSON.parse(localStorage.getItem("todo-state-cache-v1") || "null"),
   }));
 
-  await page.waitForFunction(() => Array.from(document.querySelectorAll(".todo-text")).some((node) => node.textContent === "数据库中的最新任务"), null, { timeout: 5000 });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll(".workbench-task-label")).some((node) => node.textContent === "数据库中的最新任务"), null, { timeout: 5000 });
   const freshSnapshot = await page.evaluate(() => ({
     bodyReadOnly: document.body.classList.contains("read-only"),
     status: document.getElementById("status").textContent,
     newDisabled: document.getElementById("openNew").disabled,
-    texts: Array.from(document.querySelectorAll(".todo-text")).map((node) => node.textContent),
+    texts: Array.from(document.querySelectorAll(".workbench-task-label")).map((node) => node.textContent),
+    dailyTexts: Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).map((node) => node.textContent),
     checkboxDisabled: document.querySelector(".checkbox")?.disabled === true,
     cache: JSON.parse(localStorage.getItem("todo-state-cache-v1") || "null"),
   }));
 
   const overdueMappedToToday = cacheSnapshot.texts.includes("缓存中的过期任务")
-    && cacheSnapshot.texts.filter((text) => text === "（每日任务）缓存每日任务").length === 1;
+    && cacheSnapshot.texts.every((text) => !text.includes("缓存每日任务"))
+    && cacheSnapshot.dailyTexts.filter((text) => text === "缓存每日任务").length === 1;
   const cacheModeWorks = cacheSnapshot.bodyReadOnly && cacheSnapshot.newDisabled && cacheSnapshot.checkboxDisabled && cacheSnapshot.status.includes("只读");
   const freshModeWorks = !freshSnapshot.bodyReadOnly && !freshSnapshot.newDisabled && !freshSnapshot.checkboxDisabled && freshSnapshot.texts.includes("数据库中的最新任务");
   const cacheUpdated = freshSnapshot.cache?.todos?.some((todo) => todo.text === "数据库中的最新任务") === true;

@@ -62,7 +62,7 @@ const server = http.createServer((request, response) => {
 });
 
 async function openCounter(page) {
-  await page.locator("[data-counter-manage]").click();
+  await page.locator("#openCounterHome").click();
   await page.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
   await page.waitForFunction(() => document.querySelectorAll("#counterFilters .counter-filter-row").length >= 2, null, { timeout: 5000 });
 }
@@ -80,7 +80,11 @@ async function selectionSnapshot(page) {
 
 (async () => {
   await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
-  const browser = await chromium.launch({ headless: true, executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" });
+  const browserPath = [
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  ].find((candidate) => fs.existsSync(candidate));
+  const browser = await chromium.launch({ headless: true, executablePath: browserPath });
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors = [];
@@ -91,7 +95,7 @@ async function selectionSnapshot(page) {
   await page.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
 
   await page.goto(`file://${testHtml.replaceAll("\\", "/")}`);
-  await page.waitForSelector("[data-counter-manage]", { timeout: 5000 });
+  await page.waitForSelector("#openCounterHome", { timeout: 5000 });
 
   await openCounter(page);
   const firstOpen = await selectionSnapshot(page);
@@ -106,7 +110,7 @@ async function selectionSnapshot(page) {
     && afterUncheck.storage?.["counter-b"] === undefined;
 
   await page.reload();
-  await page.waitForSelector("[data-counter-manage]", { timeout: 5000 });
+  await page.waitForSelector("#openCounterHome", { timeout: 5000 });
   await openCounter(page);
   const afterReload = await selectionSnapshot(page);
   const persistsReload = afterReload.countText.includes("已选择 1 / 2")
@@ -115,7 +119,7 @@ async function selectionSnapshot(page) {
 
   extraItem = true;
   await page.reload();
-  await page.waitForSelector("[data-counter-manage]", { timeout: 5000 });
+  await page.waitForSelector("#openCounterHome", { timeout: 5000 });
   await openCounter(page);
   await page.waitForFunction(() => document.querySelectorAll("#counterFilters .counter-filter-row").length === 3, null, { timeout: 5000 });
   const afterNewItem = await selectionSnapshot(page);
@@ -135,7 +139,7 @@ async function selectionSnapshot(page) {
     && Object.values(afterClearAll.storage || {}).every((value) => value === false);
 
   await page.reload();
-  await page.waitForSelector("[data-counter-manage]", { timeout: 5000 });
+  await page.waitForSelector("#openCounterHome", { timeout: 5000 });
   await openCounter(page);
   const afterClearReload = await selectionSnapshot(page);
   const clearPersists = afterClearReload.countText.includes("已选择 0 / 3") && afterClearReload.checked.every((entry) => !entry.checked);

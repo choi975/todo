@@ -15,6 +15,7 @@ const counterMobileScreenshotPath = path.join(root, "outputs", "counter-mobile-p
 const counterStatsMobileScreenshotPath = path.join(root, "outputs", "counter-stats-mobile-preview.png");
 const dailyScreenshotPath = path.join(root, "outputs", "daily-preview.png");
 const dailyMobileScreenshotPath = path.join(root, "outputs", "daily-mobile-preview.png");
+const workbenchMobileScreenshotPath = path.join(root, "outputs", "todo-mobile-preview.png");
 const logPath = path.join(root, "work", "verify-todo.log");
 fs.writeFileSync(logPath, "", "utf8");
 const originalLog = console.log.bind(console);
@@ -322,8 +323,11 @@ const server = http.createServer((req, res) => {
 (async () => {
   await new Promise((resolve) => server.listen(19087, "127.0.0.1", resolve));
   console.log("verify: server ready");
-  const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-  const browser = await chromium.launch({ headless: true, executablePath: chromePath });
+  const browserPath = [
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  ].find((candidate) => fs.existsSync(candidate));
+  const browser = await chromium.launch({ headless: true, executablePath: browserPath });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   const errors = [];
@@ -388,113 +392,30 @@ const server = http.createServer((req, res) => {
   await page.waitForFunction(() => !document.querySelector("#dailyBackdrop.open"));
   console.log("verify: daily manager passed");
 
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "todo：增加打卡功能",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-  console.log("verify: initial ordering passed");
+  const initialPrefixGroupCount = await page.locator("#prefixGroups .prefix-group").count();
+  const initialPrefixTaskCount = await page.locator("#prefixGroups .todo").count();
+  const initialTodayOrder = await todayWorkbenchTexts(page);
+  const dailyDashboardCount = await page.locator("#workbenchDaily .daily-home-row").count();
+  const dailyInstancesHiddenFromDates = await page.locator('#todayTodos .todo[data-id^="d"], #upcomingGroups .todo[data-id^="d"]').count() === 0;
+  const upcomingRegularVisible = await page.locator('#upcomingGroups .workbench-task-label').filter({ hasText: "周五检查项目进度" }).count() === 1;
+  if (initialPrefixGroupCount !== 2 || initialPrefixTaskCount !== 3 || initialTodayOrder.join("|") !== "下班跑步" || dailyDashboardCount !== 4 || !dailyInstancesHiddenFromDates || !upcomingRegularVisible) {
+    throw new Error("initial workbench partition failed");
+  }
+  console.log("verify: initial workbench partition passed");
 
   await createTodayTodo(page, "todo：优化排序问题");
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "todo：增加打卡功能",
-    "todo：优化排序问题",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-
-  await page.getByRole("button", { name: "置顶：todo：优化排序问题" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-  console.log("verify: prefix group pinning passed");
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#prefixGroups .workbench-task-label")).some((node) => node.textContent === "优化排序问题"));
+  const prefixTasksAlwaysExpanded = await page.locator("#prefixGroups .todo").count() === 4
+    && await page.locator("#prefixGroups .todo-action").count() === 0;
+  if (!prefixTasksAlwaysExpanded) throw new Error("prefix workbench rendering failed");
 
   await createTodayTodo(page, "处理发票");
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "处理发票",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-
-  await page.locator(`.day[data-date="${TODAY}"]`).getByRole("button", { name: "置底：处理发票" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "下班跑步",
-    "处理发票",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-
-  await page.locator(`.day[data-date="${TODAY}"]`).getByRole("button", { name: "置顶：处理发票" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "处理发票",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
-  console.log("verify: regular insert and edge pinning passed");
+  await expectTodayOrder(page, ["处理发票", "下班跑步"]);
+  await page.locator("#todayTodos").getByRole("button", { name: "置底：处理发票" }).click({ force: true });
+  await expectTodayOrder(page, ["下班跑步", "处理发票"]);
+  await page.locator("#todayTodos").getByRole("button", { name: "置顶：处理发票" }).click({ force: true });
+  await expectTodayOrder(page, ["处理发票", "下班跑步"]);
+  console.log("verify: regular workbench ordering passed");
 
   await page.getByRole("button", { name: "完成：处理发票" }).click();
   await page.waitForFunction(() => {
@@ -513,55 +434,11 @@ const server = http.createServer((req, res) => {
     const button = document.getElementById("openCompleted");
     return button && !document.getElementById("completedBadge") && button.getAttribute("aria-label") === "打开已完成任务";
   });
-  await page.waitForFunction((today) => {
-    return Array.from(document.querySelectorAll(`.day[data-date="${today}"] .todo .todo-text`)).some((node) => node.textContent === "处理发票");
-  }, TODAY);
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#todayTodos .workbench-task-label")).some((node) => node.textContent === "处理发票"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => !document.querySelector("#completedBackdrop.open"));
-  await expectTodayOrder(page, [
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "处理发票",
-    "下班跑步",
-    "（每日任务）喝水",
-    "（每日任务）健身",
-  ]);
+  await expectTodayOrder(page, ["处理发票", "下班跑步"]);
   console.log("verify: completed history restore passed");
-
-  await page.locator('.todo[data-id="d3-today"]').hover();
-  await page.locator(`.day[data-date="${TODAY}"]`).getByRole("button", { name: "置顶：（每日任务）喝水" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）喝水",
-    "（每日任务）淘宝薅羊毛",
-    "（每日任务）吃饭",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "处理发票",
-    "下班跑步",
-    "（每日任务）健身",
-  ]);
-
-  await page.locator('.todo[data-id="d2-today"]').hover();
-  await page.locator(`.day[data-date="${TODAY}"]`).getByRole("button", { name: "置底：（每日任务）吃饭" }).click({ force: true });
-  await expectTodayOrder(page, [
-    "（每日任务）喝水",
-    "（每日任务）淘宝薅羊毛",
-    "todo：优化排序问题",
-    "todo：增加打卡功能",
-    "电池：修复OTABUG",
-    "电池：修复温度BUG",
-    "处理发票",
-    "下班跑步",
-    "（每日任务）健身",
-    "（每日任务）吃饭",
-  ]);
-  console.log("verify: daily edge pinning passed");
 
   await page.keyboard.down("Alt");
   await page.keyboard.press("KeyN");
@@ -570,20 +447,12 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "买早餐");
   await page.locator("#dateSelect").selectOption("daily");
   await page.keyboard.press("Enter");
-  await page.waitForFunction((today) => {
-    return Array.from(document.querySelectorAll(`.day[data-date="${today}"] .todo .todo-text`)).some((node) => node.textContent === "（每日任务）买早餐");
-  }, TODAY);
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).some((node) => node.textContent === "买早餐"));
   console.log("verify: daily buy create passed");
-  const createdDailyDates = await page.locator(".todo .todo-text").evaluateAll((nodes) => {
-    const result = [];
-    for (const node of nodes) {
-      if ((node.textContent || "").includes("（每日任务）买早餐")) {
-        const day = node.closest(".day");
-        result.push(day ? day.dataset.date : "");
-      }
-    }
-    return result;
-  });
+  const breakfastTaskId = dailyTasks.find((task) => task.text === "（每日任务）买早餐")?.id;
+  const createdDailyDates = todos.filter((todo) => todo.sourceDailyTaskId === breakfastTaskId).map((todo) => todo.instanceDate || todo.dueDate);
+  const dailyBreakfastHiddenFromDatePanels = await page.locator('#todayTodos .workbench-task-label, #upcomingGroups .workbench-task-label').allTextContents().then((values) => values.every((value) => !value.includes("买早餐")));
+  if (!dailyBreakfastHiddenFromDatePanels) throw new Error("daily task duplicated in date panels");
 
   await page.getByRole("button", { name: "打开每日任务" }).click();
   await page.waitForSelector("#dailyBackdrop.open");
@@ -597,14 +466,14 @@ const server = http.createServer((req, res) => {
 
   const initialCounterShortcutCount = await page.locator(".counter-shortcut").count();
   const counterRecordsBeforeQuick = counterRecords.length;
-  await page.locator('[data-counter-id="counter-swim"]').click();
+  await page.locator('#workbenchCounters [data-counter-id="counter-swim"]').click();
   await page.waitForSelector("#counterToast.open", { timeout: 5000 });
   const counterToastText = await page.locator("#counterToastMessage").innerText();
   await page.getByRole("button", { name: "撤销" }).click();
   await page.waitForFunction(() => !document.querySelector("#counterToast.open"));
   const counterUndoRestoredCount = counterRecords.length === counterRecordsBeforeQuick;
 
-  await page.getByRole("button", { name: "打开累计记录" }).click();
+  await page.getByRole("button", { name: "打开累计统计" }).click();
   await page.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
   await page.waitForFunction(() => document.querySelectorAll("#counterFilters .counter-filter-row").length >= 2);
   const counterSummaryText = await page.locator("#counterSummary").innerText();
@@ -669,7 +538,7 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "每天：晨跑");
   await page.locator("#newForm button[type=submit]").click();
   await page.waitForFunction(() => !document.querySelector("#modalBackdrop.open"));
-  await page.waitForFunction((today) => Array.from(document.querySelectorAll(`.day[data-date="${today}"] .todo-text`)).some((node) => node.textContent === "（每日任务）晨跑"), TODAY);
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).some((node) => node.textContent === "晨跑"));
   const autoDailyCreated = dailyTasks.some((task) => task.text === "（每日任务）晨跑");
 
   await page.keyboard.down("Alt");
@@ -726,16 +595,17 @@ const server = http.createServer((req, res) => {
   if (!relativeDateRoutingPassed) throw new Error("relative date routing failed");
   console.log("verify: relative date recognition passed");
 
-  await page.locator(`.day[data-date="${THIRD_DAY}"] .day-header`).click();
-  await page.waitForSelector(`.day[data-date="${THIRD_DAY}"]:not(.collapsed)`);
+  await page.waitForFunction(() => (document.querySelector("#upcomingGroups")?.textContent || "").includes("周五检查项目进度"));
   await page.screenshot({ path: screenshotPath, fullPage: true });
 
   const mobilePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobilePage.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   await mobilePage.goto(`file://${testHtml.replaceAll("\\", "/")}`);
   await mobilePage.waitForSelector(".todo.selected", { timeout: 5000 });
-  await mobilePage.getByRole("button", { name: "打开累计记录" }).click();
+  await mobilePage.screenshot({ path: workbenchMobileScreenshotPath, fullPage: true });
+  await mobilePage.getByRole("button", { name: "打开累计统计" }).click();
   await mobilePage.waitForSelector("#counterBackdrop.open", { timeout: 5000 });
+  await mobilePage.waitForFunction(() => document.querySelectorAll("#counterFilters .counter-filter-row").length >= 2, null, { timeout: 5000 });
   const mobileCounterControlsVisible = await mobilePage.locator("#counterFilters [data-counter-add]").count() >= 2
     && await mobilePage.locator("#counterPeriods [data-period]").count() === 4
     && await mobilePage.locator("#counterChartModes").count() === 0;
@@ -804,6 +674,7 @@ const server = http.createServer((req, res) => {
     counterStatsMobileScreenshotPath,
     dailyScreenshotPath,
     dailyMobileScreenshotPath,
+    workbenchMobileScreenshotPath,
   };
   console.log(JSON.stringify(result, null, 2));
   if (errors.length) process.exitCode = 1;
@@ -1212,10 +1083,14 @@ async function todoTextsFor(page, dueDate) {
 }
 
 async function expectTodayOrder(page, expected) {
-  await page.waitForFunction(({ today, expected }) => {
-    const actual = Array.from(document.querySelectorAll(`.day[data-date="${today}"] .todo .todo-text`)).map((node) => node.textContent || "");
+  await page.waitForFunction((expected) => {
+    const actual = Array.from(document.querySelectorAll("#todayTodos .workbench-task-label")).map((node) => node.textContent || "");
     return actual.length === expected.length && actual.every((text, index) => text === expected[index]);
-  }, { today: TODAY, expected });
+  }, expected);
+}
+
+async function todayWorkbenchTexts(page) {
+  return page.locator("#todayTodos .workbench-task-label").allTextContents();
 }
 
 async function createTodayTodo(page, text) {
