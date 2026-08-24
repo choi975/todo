@@ -1366,7 +1366,7 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 14px;
     }
 
     .counter-check.checked {
@@ -2465,12 +2465,28 @@
       padding: 2px 2px 6px;
     }
 
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      padding-bottom: 12px;
+    }
+
     .workbench-grid {
       display: grid;
       grid-template-columns: minmax(330px, 35fr) minmax(390px, 41fr) minmax(290px, 24fr);
       gap: 12px;
-      height: max(690px, calc(100vh - 116px));
-      min-height: 690px;
+      height: auto;
+      min-height: 0;
+      flex: 1;
     }
 
     .workbench-center,
@@ -2482,11 +2498,27 @@
     }
 
     .workbench-center {
-      grid-template-rows: minmax(380px, 1.55fr) minmax(260px, 1fr);
+      grid-template-rows: minmax(0, 1fr) minmax(156px, .38fr);
     }
 
     .workbench-right {
-      grid-template-rows: minmax(240px, 1.12fr) minmax(220px, 1fr) minmax(180px, .86fr);
+      grid-template-rows: minmax(0, 1fr) minmax(156px, .38fr);
+    }
+
+    .workbench-center-bottom {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      min-width: 0;
+      min-height: 0;
+      gap: 12px;
+    }
+
+    .workbench-center-bottom.upcoming-hidden {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .upcoming-panel[hidden] {
+      display: none !important;
     }
 
     .workbench-panel {
@@ -2522,7 +2554,7 @@
     .workbench-panel-head h2 {
       margin: 0;
       color: var(--wb-ink);
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 760;
       letter-spacing: 0;
       white-space: nowrap;
@@ -2531,7 +2563,7 @@
     .workbench-panel-head span {
       overflow: hidden;
       color: var(--wb-muted);
-      font-size: 10px;
+      font-size: 12px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -2604,14 +2636,14 @@
     }
 
     .prefix-label strong {
-      font-size: 11px;
+      font-size: 14px;
       text-transform: uppercase;
     }
 
     .prefix-label span {
       margin-top: 3px;
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 11px;
     }
 
     .prefix-tasks {
@@ -2642,7 +2674,7 @@
     }
 
     .shopping-list .todo {
-      min-height: 38px;
+      min-height: 46px;
     }
 
     .workbench-list .todo:last-child,
@@ -2679,8 +2711,8 @@
       display: grid;
       gap: 2px;
       min-width: 0;
-      font-size: 12px;
-      line-height: 1.35;
+      font-size: 15px;
+      line-height: 1.45;
     }
 
     .workbench-task-label {
@@ -2692,7 +2724,7 @@
     .workbench-task-meta {
       overflow: hidden;
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 400;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -2732,13 +2764,13 @@
     }
 
     .upcoming-day-label strong {
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .upcoming-day-label span {
       margin-top: 3px;
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 11px;
     }
 
     .upcoming-task-list {
@@ -2753,7 +2785,7 @@
       place-items: center;
       padding: 16px;
       color: var(--wb-muted);
-      font-size: 11px;
+      font-size: 13px;
       text-align: center;
     }
 
@@ -2768,7 +2800,7 @@
       grid-template-columns: 21px minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
-      min-height: 42px;
+      min-height: 48px;
       border-bottom: 1px solid #e7e9e7;
     }
 
@@ -2809,7 +2841,7 @@
 
     .daily-home-copy strong {
       overflow: hidden;
-      font-size: 11px;
+      font-size: 14px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -2817,12 +2849,12 @@
     .daily-home-copy small {
       margin-top: 2px;
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 11px;
     }
 
     .daily-home-rate {
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 11px;
       white-space: nowrap;
     }
 
@@ -2850,7 +2882,7 @@
       overflow: hidden;
       max-width: 100%;
       color: var(--wb-muted);
-      font-size: 9px;
+      font-size: 12px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -2885,8 +2917,18 @@
     }
 
     @media (max-width: 1120px) {
+      html,
+      body {
+        height: auto;
+        min-height: 100%;
+        overflow: auto;
+      }
+
       .app {
         width: min(100vw - 24px, 1100px);
+        height: auto;
+        max-height: none;
+        overflow: visible;
       }
 
       .topbar {
@@ -2906,7 +2948,7 @@
 
       .workbench-right {
         grid-column: 1 / -1;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
         grid-template-rows: 320px;
       }
     }
@@ -2959,6 +3001,11 @@
 
       .workbench-center,
       .workbench-right {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .workbench-center-bottom {
         display: flex;
         flex-direction: column;
       }
@@ -3050,13 +3097,23 @@
           </header>
           <div class="workbench-scroll workbench-list" id="todayTodos"></div>
         </section>
-
-        <section class="workbench-panel upcoming-panel" aria-labelledby="upcomingTitle">
-          <header class="workbench-panel-head">
-            <div><h2 id="upcomingTitle">未来 30 天</h2><span id="upcomingSummary"></span></div>
-          </header>
-          <div class="workbench-scroll upcoming-groups" id="upcomingGroups"></div>
-        </section>
+        <div class="workbench-center-bottom">
+          <section class="workbench-panel upcoming-panel" aria-labelledby="upcomingTitle">
+            <header class="workbench-panel-head">
+              <div><h2 id="upcomingTitle">未来 30 天</h2><span id="upcomingSummary"></span></div>
+            </header>
+            <div class="workbench-scroll upcoming-groups" id="upcomingGroups"></div>
+          </section>
+          <section class="workbench-panel daily-home-panel" aria-labelledby="dailyHomeTitle">
+            <header class="workbench-panel-head">
+              <div><h2 id="dailyHomeTitle">每日任务</h2><span id="dailyHomeSummary"></span></div>
+              <button class="panel-icon-button" id="openDaily" type="button" title="管理每日任务" aria-label="打开每日任务管理">
+                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.04.08h-4l-.04-.08a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.04v-4L4 9.92a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.04-.08h4l.04.08h.04a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.38.31.73.6 1l.08.04v4L20 14.08c-.29.27-.5.62-.6 1Z"></path></svg>
+              </button>
+            </header>
+            <div class="workbench-scroll daily-home-list" id="workbenchDaily"></div>
+          </section>
+        </div>
       </div>
 
       <aside class="workbench-right" aria-label="购物、每日和累计任务">
@@ -3065,16 +3122,6 @@
             <div><h2 id="shoppingTitle">购物清单</h2><span id="shoppingSummary"></span></div>
           </header>
           <div class="workbench-scroll workbench-list shopping-list" id="shoppingTodos"></div>
-        </section>
-
-        <section class="workbench-panel daily-home-panel" aria-labelledby="dailyHomeTitle">
-          <header class="workbench-panel-head">
-            <div><h2 id="dailyHomeTitle">每日任务</h2><span id="dailyHomeSummary"></span></div>
-            <button class="panel-icon-button" id="openDaily" type="button" title="管理每日任务" aria-label="打开每日任务管理">
-              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.04.08h-4l-.04-.08a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.04v-4L4 9.92a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.04-.08h4l.04.08a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.38.31.73.6 1l.08.04v4L20 14.08c-.29.27-.5.62-.6 1Z"></path></svg>
-            </button>
-          </header>
-          <div class="workbench-scroll daily-home-list" id="workbenchDaily"></div>
         </section>
 
         <section class="workbench-panel counters-home-panel" aria-labelledby="countersHomeTitle">
@@ -3702,7 +3749,15 @@
         els.upcomingGroups.appendChild(section);
       }
       els.upcomingSummary.textContent = `${total} 项 · ${populatedDays} 天有安排`;
-      if (!total) appendWorkbenchEmpty(els.upcomingGroups, "未来 30 天没有普通任务");
+      const upcomingPanel = els.upcomingGroups.closest(".upcoming-panel");
+      const upcomingRow = upcomingPanel?.parentElement;
+      if (!total) {
+        if (upcomingPanel) upcomingPanel.hidden = true;
+        upcomingRow?.classList.add("upcoming-hidden");
+        return;
+      }
+      if (upcomingPanel) upcomingPanel.hidden = false;
+      upcomingRow?.classList.remove("upcoming-hidden");
     }
 
     function renderWorkbenchShopping() {
