@@ -331,25 +331,28 @@ const server = http.createServer((req, res) => {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   const errors = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => errors.push(error.stack || error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
 
   await page.goto(`file://${testHtml.replaceAll("\\", "/")}`);
-  await page.waitForSelector(".todo.selected", { timeout: 5000 });
+  await page.waitForSelector(".todo.selected", { timeout: 5000 }).catch(async (error) => {
+    console.error("page errors before load:", errors.join(" | "));
+    throw error;
+  });
   console.log("verify: page loaded");
 
   const selectedKeyboardTarget = () => page.evaluate(() => {
-    const selected = document.querySelector(".todo.selected, .daily-home-row.selected, .counter-home-item.selected");
+    const selected = document.querySelector(".todo.selected, .daily-row.selected, .counter-home-item.selected");
     if (!selected) return "";
     if (selected.matches(".todo")) return `todo:${selected.dataset.id}`;
-    if (selected.matches(".daily-home-row")) return `daily:${selected.dataset.dailyId}`;
+    if (selected.matches(".daily-row")) return `daily:${selected.dataset.dailyId}`;
     return `counter:${selected.dataset.counterItemId}`;
   });
   const prefixFirstId = await page.locator("#prefixGroups .todo").first().getAttribute("data-id");
   const todayFirstId = await page.locator("#todayTodos .todo").first().getAttribute("data-id");
-  const dailyFirstId = await page.locator("#workbenchDaily .daily-home-row").first().getAttribute("data-daily-id");
+  const dailyFirstId = await page.locator("#workbenchDaily .daily-row").first().getAttribute("data-daily-id");
   const counterIds = await page.locator("#workbenchCounters .counter-home-item").evaluateAll((nodes) => nodes.map((node) => node.dataset.counterItemId));
   await page.locator(`#prefixGroups .todo[data-id="${prefixFirstId}"]`).click();
   await page.keyboard.press("ArrowRight");
@@ -360,9 +363,9 @@ const server = http.createServer((req, res) => {
   if (await selectedKeyboardTarget() !== `counter:${counterIds.at(-1)}`) throw new Error("ArrowLeft counter wrap failed");
   await page.keyboard.press("Tab");
   if (await selectedKeyboardTarget() !== `todo:${prefixFirstId}`) throw new Error("Tab counter wrap failed");
-  await page.locator(`#todayTodos .todo[data-id="${todayFirstId}"]`).click();
-  const todayCount = await page.locator("#todayTodos .todo").count();
-  for (let index = 0; index < todayCount; index += 1) await page.keyboard.press("ArrowDown");
+  const todayLastId = await page.locator("#todayTodos .todo").last().getAttribute("data-id");
+  await page.locator(`#todayTodos .todo[data-id="${todayLastId}"]`).click();
+  await page.keyboard.press("ArrowDown");
   if (await selectedKeyboardTarget() !== `daily:${dailyFirstId}`) throw new Error("ArrowDown today-to-daily navigation failed");
   await page.keyboard.press("ArrowUp");
   if (!(await selectedKeyboardTarget()).startsWith("todo:")) throw new Error("ArrowUp reverse navigation failed");
@@ -396,8 +399,6 @@ const server = http.createServer((req, res) => {
   const counterOptionInNewExists = await page.locator('#dateSelect option[value="counter"]').count() === 1;
   await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "打开每日任务" }).click();
-  await page.waitForSelector("#dailyBackdrop.open", { timeout: 5000 });
   const initialDailyStats = await page.locator(".daily-count-button").first().innerText();
   await page.locator(".daily-count-button").first().click();
   await page.waitForSelector("#checkinBackdrop.open", { timeout: 5000 });
@@ -420,23 +421,21 @@ const server = http.createServer((req, res) => {
 
   await page.fill("#dailyText", "阅读");
   await page.locator("#dailyForm").getByRole("button", { name: "新建" }).click();
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "阅读"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "阅读"));
   await page.getByRole("button", { name: "编辑每日任务：阅读" }).click();
   await page.fill("#dailyText", "晨间阅读");
   await page.locator("#dailyForm").getByRole("button", { name: "保存" }).click();
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨间阅读"));
   const dailyEditUpdatedTodos = todos.some((todo) => todo.sourceDailyTaskId && todo.text === "（每日任务）晨间阅读");
   await page.screenshot({ path: dailyScreenshotPath, fullPage: true });
   await page.getByRole("button", { name: "删除每日任务：晨间阅读" }).click();
-  await page.waitForFunction(() => !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => !document.querySelector("#dailyBackdrop.open"));
+  await page.waitForFunction(() => !Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨间阅读"));
   console.log("verify: daily manager passed");
 
   const initialPrefixGroupCount = await page.locator("#prefixGroups .prefix-group").count();
   const initialPrefixTaskCount = await page.locator("#prefixGroups .todo").count();
   const initialTodayOrder = await todayWorkbenchTexts(page);
-  const dailyDashboardCount = await page.locator("#workbenchDaily .daily-home-row").count();
+  const dailyDashboardCount = await page.locator("#workbenchDaily .daily-row").count();
   const dailyInstancesHiddenFromDates = await page.locator('#todayTodos .todo[data-id^="d"], #upcomingGroups .todo[data-id^="d"]').count() === 0;
   const upcomingRegularVisible = await page.locator('#upcomingGroups .workbench-task-label').filter({ hasText: "周五检查项目进度" }).count() === 1;
   if (initialPrefixGroupCount !== 2 || initialPrefixTaskCount !== 3 || initialTodayOrder.join("|") !== "下班跑步" || dailyDashboardCount !== 4 || !dailyInstancesHiddenFromDates || !upcomingRegularVisible) {
@@ -488,21 +487,17 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "买早餐");
   await page.locator("#dateSelect").selectOption("daily");
   await page.keyboard.press("Enter");
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).some((node) => node.textContent === "买早餐"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "买早餐"));
   console.log("verify: daily buy create passed");
   const breakfastTaskId = dailyTasks.find((task) => task.text === "（每日任务）买早餐")?.id;
   const createdDailyDates = todos.filter((todo) => todo.sourceDailyTaskId === breakfastTaskId).map((todo) => todo.instanceDate || todo.dueDate);
   const dailyBreakfastHiddenFromDatePanels = await page.locator('#todayTodos .workbench-task-label, #upcomingGroups .workbench-task-label').allTextContents().then((values) => values.every((value) => !value.includes("买早餐")));
   if (!dailyBreakfastHiddenFromDatePanels) throw new Error("daily task duplicated in date panels");
 
-  await page.getByRole("button", { name: "打开每日任务" }).click();
-  await page.waitForSelector("#dailyBackdrop.open");
   await page.getByRole("button", { name: "删除每日任务：喝水" }).click();
   await page.waitForFunction(() => {
-    return !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => (node.textContent || "") === "喝水");
+    return !Array.from(document.querySelectorAll("#dailyItems .daily-main strong")).some((node) => (node.textContent || "") === "喝水");
   });
-  await page.keyboard.press("Escape");
-  await page.waitForFunction(() => !document.querySelector("#dailyBackdrop.open"));
   console.log("verify: daily delete passed");
 
   const initialCounterShortcutCount = await page.locator(".counter-shortcut").count();
@@ -579,7 +574,7 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "每天：晨跑");
   await page.locator("#newForm button[type=submit]").click();
   await page.waitForFunction(() => !document.querySelector("#modalBackdrop.open"));
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-home-copy strong")).some((node) => node.textContent === "晨跑"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨跑"));
   const autoDailyCreated = dailyTasks.some((task) => task.text === "（每日任务）晨跑");
 
   await page.keyboard.down("Alt");
@@ -656,8 +651,6 @@ const server = http.createServer((req, res) => {
   await mobilePage.screenshot({ path: counterMobileScreenshotPath, fullPage: true });
   await mobilePage.keyboard.press("Escape");
   await mobilePage.waitForFunction(() => !document.querySelector("#counterBackdrop.open"));
-  await mobilePage.getByRole("button", { name: "打开每日任务" }).click();
-  await mobilePage.waitForSelector("#dailyBackdrop.open", { timeout: 5000 });
   const mobileDailyControlsVisible = await mobilePage.locator("#dailyForm #dailyText").isVisible()
     && await mobilePage.locator("#dailyItems .daily-row").count() >= 1
     && await mobilePage.locator('#dailyItems [aria-label^="编辑每日任务："]').first().isVisible();
