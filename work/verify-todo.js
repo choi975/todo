@@ -340,6 +340,47 @@ const server = http.createServer((req, res) => {
   await page.waitForSelector(".todo.selected", { timeout: 5000 });
   console.log("verify: page loaded");
 
+  const selectedKeyboardTarget = () => page.evaluate(() => {
+    const selected = document.querySelector(".todo.selected, .daily-home-row.selected, .counter-home-item.selected");
+    if (!selected) return "";
+    if (selected.matches(".todo")) return `todo:${selected.dataset.id}`;
+    if (selected.matches(".daily-home-row")) return `daily:${selected.dataset.dailyId}`;
+    return `counter:${selected.dataset.counterItemId}`;
+  });
+  const prefixFirstId = await page.locator("#prefixGroups .todo").first().getAttribute("data-id");
+  const todayFirstId = await page.locator("#todayTodos .todo").first().getAttribute("data-id");
+  const dailyFirstId = await page.locator("#workbenchDaily .daily-home-row").first().getAttribute("data-daily-id");
+  const counterIds = await page.locator("#workbenchCounters .counter-home-item").evaluateAll((nodes) => nodes.map((node) => node.dataset.counterItemId));
+  await page.locator(`#prefixGroups .todo[data-id="${prefixFirstId}"]`).click();
+  await page.keyboard.press("ArrowRight");
+  if (await selectedKeyboardTarget() !== `todo:${todayFirstId}`) throw new Error("ArrowRight card navigation failed");
+  await page.keyboard.press("ArrowLeft");
+  if (await selectedKeyboardTarget() !== `todo:${prefixFirstId}`) throw new Error("ArrowLeft card navigation failed");
+  await page.keyboard.press("ArrowLeft");
+  if (await selectedKeyboardTarget() !== `counter:${counterIds.at(-1)}`) throw new Error("ArrowLeft counter wrap failed");
+  await page.keyboard.press("Tab");
+  if (await selectedKeyboardTarget() !== `todo:${prefixFirstId}`) throw new Error("Tab counter wrap failed");
+  await page.locator(`#todayTodos .todo[data-id="${todayFirstId}"]`).click();
+  const todayCount = await page.locator("#todayTodos .todo").count();
+  for (let index = 0; index < todayCount; index += 1) await page.keyboard.press("ArrowDown");
+  if (await selectedKeyboardTarget() !== `daily:${dailyFirstId}`) throw new Error("ArrowDown today-to-daily navigation failed");
+  await page.keyboard.press("ArrowUp");
+  if (!(await selectedKeyboardTarget()).startsWith("todo:")) throw new Error("ArrowUp reverse navigation failed");
+  const todayIdsBeforeAltMove = await page.locator("#todayTodos .todo").evaluateAll((nodes) => nodes.map((node) => node.dataset.id));
+  if (todayIdsBeforeAltMove.length > 1) {
+    const movedId = todayIdsBeforeAltMove[1];
+    await page.locator(`#todayTodos .todo[data-id="${movedId}"]`).click();
+    await page.keyboard.down("Alt");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.up("Alt");
+    await page.waitForFunction((id) => document.querySelector("#todayTodos .todo")?.dataset.id === id, movedId);
+    const firstAfterAltMove = await page.locator("#todayTodos .todo").first().getAttribute("data-id");
+    if (firstAfterAltMove !== movedId) throw new Error("Alt+ArrowUp priority move failed");
+    await page.keyboard.press("2");
+    await page.waitForFunction((id) => document.querySelector("#todayTodos .todo:last-child")?.dataset.id === id, movedId);
+  }
+  console.log("verify: keyboard navigation passed");
+
   const initialSelected = await page.locator(".todo.selected .todo-text").innerText();
   const counterMigrationApplied = counterItems.every((item) => item.kind === "count" && item.unit === "次" && item.incrementValue === 1)
     && counterRecords.every((record) => record.amount === 1);

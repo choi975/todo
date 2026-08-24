@@ -2808,6 +2808,12 @@
       border-bottom: 0;
     }
 
+    .daily-home-row.selected,
+    .counter-home-item.selected {
+      background: var(--accent-soft);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
     .daily-home-check {
       display: grid;
       width: 19px;
@@ -3785,6 +3791,11 @@
         const checked = Array.isArray(task.checkins) && task.checkins.includes(state.today);
         const row = document.createElement("div");
         row.className = "daily-home-row";
+        if (isSelectedDailyTask(task.id)) row.classList.add("selected");
+        row.dataset.dailyId = task.id;
+        row.addEventListener("click", (event) => {
+          if (!event.target.closest(".daily-home-check")) selectDailyTask(task.id);
+        });
         const check = document.createElement("button");
         check.className = "daily-home-check" + (checked ? " checked" : "");
         check.type = "button";
@@ -3823,6 +3834,11 @@
       for (const item of items) {
         const row = document.createElement("div");
         row.className = "counter-home-item";
+        if (isSelectedCounterItem(item.id)) row.classList.add("selected");
+        row.dataset.counterItemId = item.id;
+        row.addEventListener("click", (event) => {
+          if (!event.target.closest("button")) selectCounterItem(item.id);
+        });
         const label = document.createElement("span");
         label.textContent = item.name;
         const total = document.createElement("strong");
@@ -4936,32 +4952,68 @@
       }
       if (newModalOpen || dailyModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
       if (isTextEntryTarget(event.target) || state.editingId) return;
+      const isTabShortcut = event.key === "Tab" && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
       const isPinShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "1" || event.code === "Numpad1");
       const isBottomShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "2" || event.code === "Numpad2");
       const isCollapseShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "z";
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key) || isPinShortcut || isBottomShortcut || isCollapseShortcut) {
+      const isAltMoveUp = event.altKey && !event.ctrlKey && !event.metaKey && event.key === "ArrowUp";
+      const isAltMoveDown = event.altKey && !event.ctrlKey && !event.metaKey && event.key === "ArrowDown";
+      const isPlainArrow = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
+      const isAltUnusedArrow = event.altKey && !event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight");
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key) || isTabShortcut || isPinShortcut || isBottomShortcut || isCollapseShortcut || isAltMoveUp || isAltMoveDown || isAltUnusedArrow) {
         event.preventDefault();
       }
-      if (event.key === "ArrowUp") moveSelection(-1);
-      if (event.key === "ArrowDown") moveSelection(1);
-      if (event.key === "ArrowLeft" && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("up");
-      if (event.key === "ArrowRight" && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("down");
+      if (isPlainArrow && event.key === "ArrowUp") moveKeyboardSelection(-1);
+      if (isPlainArrow && event.key === "ArrowDown") moveKeyboardSelection(1);
+      if (isPlainArrow && event.key === "ArrowLeft") moveKeyboardCard(-1);
+      if (isPlainArrow && event.key === "ArrowRight") moveKeyboardCard(1);
+      if (isTabShortcut) moveKeyboardTab();
       if (event.key === " " && canWrite()) activateSelected();
       if (isPinShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "top");
       if (isBottomShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "bottom");
+      if (isAltMoveUp && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("up");
+      if (isAltMoveDown && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("down");
       if (isCollapseShortcut) collapseSelectedTodoGroup();
     }
 
-    function moveSelection(delta) {
-      const items = navigationItems();
+    function moveKeyboardSelection(delta) {
+      const items = keyboardNavigationItems();
       if (!items.length) {
         state.selected = null;
         render();
         return;
       }
-      const currentIndex = Math.max(0, items.findIndex((item) => isSameSelection(item, state.selected)));
-      const nextIndex = clamp(currentIndex + delta, 0, items.length - 1);
+      const foundIndex = items.findIndex((item) => isSameSelection(item, state.selected));
+      const currentIndex = foundIndex >= 0 ? foundIndex : (delta > 0 ? -1 : 0);
+      const nextIndex = (currentIndex + delta + items.length) % items.length;
       setSelection(items[nextIndex]);
+    }
+
+    function moveKeyboardCard(direction) {
+      const cards = keyboardHorizontalCards();
+      if (!cards.length) return;
+      let cardIndex = cards.findIndex((card) => card.items.some((item) => isSameSelection(item, state.selected)));
+      if (cardIndex < 0) cardIndex = 0;
+      const card = cards[cardIndex];
+      if (card.key === "counters") {
+        const itemIndex = card.items.findIndex((item) => isSameSelection(item, state.selected));
+        const targetIndex = itemIndex + direction;
+        if (targetIndex >= 0 && targetIndex < card.items.length) {
+          setSelection(card.items[targetIndex]);
+          return;
+        }
+      }
+      const nextCardIndex = (cardIndex + direction + cards.length) % cards.length;
+      const nextCard = cards[nextCardIndex];
+      setSelection(direction < 0 && nextCard.key === "counters" ? nextCard.items[nextCard.items.length - 1] : nextCard.items[0]);
+    }
+
+    function moveKeyboardTab() {
+      const cards = keyboardCards();
+      if (!cards.length) return;
+      const currentCard = cards.findIndex((card) => card.items.some((item) => isSameSelection(item, state.selected)));
+      const nextCard = (Math.max(0, currentCard) + 1) % cards.length;
+      setSelection(cards[nextCard].items[0]);
     }
 
     function setSelection(selection) {
@@ -4972,6 +5024,14 @@
       }
       if (selection.type === "todo") {
         selectTodo(selection.id);
+        return;
+      }
+      if (selection.type === "daily") {
+        selectDailyTask(selection.id);
+        return;
+      }
+      if (selection.type === "counter") {
+        selectCounterItem(selection.id);
         return;
       }
       selectGroup(selection.key);
@@ -5481,6 +5541,28 @@
       if (node) node.scrollIntoView({ block: "nearest" });
     }
 
+    function selectDailyTask(id, options = {}) {
+      state.selected = dailySelection(id);
+      if (options.renderNow !== false) render();
+      const node = document.querySelector(`.daily-home-row[data-daily-id="${CSS.escape(id)}"]`);
+      if (node) node.scrollIntoView({ block: "nearest" });
+    }
+
+    function selectCounterItem(id, options = {}) {
+      state.selected = counterSelection(id);
+      if (options.renderNow !== false) render();
+      const node = document.querySelector(`.counter-home-item[data-counter-item-id="${CSS.escape(id)}"]`);
+      if (node) node.scrollIntoView({ block: "nearest" });
+    }
+
+    function selectionNode(selection) {
+      if (!selection) return null;
+      if (selection.type === "todo") return document.querySelector(`.todo[data-id="${CSS.escape(selection.id)}"]`);
+      if (selection.type === "daily") return document.querySelector(`.daily-home-row[data-daily-id="${CSS.escape(selection.id)}"]`);
+      if (selection.type === "counter") return document.querySelector(`.counter-home-item[data-counter-item-id="${CSS.escape(selection.id)}"]`);
+      return null;
+    }
+
     function selectGroup(key, options = {}) {
       state.selected = groupSelection(key);
       if (options.renderNow !== false) render();
@@ -5507,6 +5589,37 @@
       return workbenchDisplayedTodos().map((todo) => todoSelection(todo.id));
     }
 
+    function keyboardNavigationItems() {
+      return keyboardCards().flatMap((card) => card.items);
+    }
+
+    function keyboardHorizontalCards() {
+      const cards = keyboardCards();
+      const byKey = new Map(cards.map((card) => [card.key, card]));
+      return ["prefix", "today", "shopping", "daily", "counters"].map((key) => byKey.get(key)).filter(Boolean);
+    }
+
+    function keyboardCards() {
+      const prefix = prefixGroupsForWorkbench().flatMap((group) => group.todos).map((todo) => todoSelection(todo.id));
+      const today = ordinaryTodosForDate(state.today).map((todo) => todoSelection(todo.id));
+      const daily = [...state.dailyTasks]
+        .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))
+        .map((task) => dailySelection(task.id));
+      const shopping = shoppingTodosForWorkbench().map((todo) => todoSelection(todo.id));
+      const active = state.counterItems
+        .filter((item) => Number(item.active ?? 1))
+        .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
+      const pinned = active.filter((item) => Number(item.pinned));
+      const counters = (pinned.length ? pinned : active).slice(0, 3).map((item) => counterSelection(item.id));
+      return [
+        { key: "prefix", items: prefix },
+        { key: "today", items: today },
+        { key: "daily", items: daily },
+        { key: "shopping", items: shopping },
+        { key: "counters", items: counters },
+      ].filter((card) => card.items.length);
+    }
+
     function workbenchDisplayedTodos() {
       const todos = [];
       const seen = new Set();
@@ -5530,17 +5643,33 @@
       return { type: "todo", id };
     }
 
+    function dailySelection(id) {
+      return { type: "daily", id };
+    }
+
+    function counterSelection(id) {
+      return { type: "counter", id };
+    }
+
     function groupSelection(key) {
       return { type: "group", key };
     }
 
     function isSameSelection(a, b) {
       if (!a || !b || a.type !== b.type) return false;
-      return a.type === "todo" ? a.id === b.id : a.key === b.key;
+      return a.type === "group" ? a.key === b.key : a.id === b.id;
     }
 
     function isSelectedTodo(id) {
       return state.selected?.type === "todo" && state.selected.id === id;
+    }
+
+    function isSelectedDailyTask(id) {
+      return state.selected?.type === "daily" && state.selected.id === id;
+    }
+
+    function isSelectedCounterItem(id) {
+      return state.selected?.type === "counter" && state.selected.id === id;
     }
 
     function isSelectedGroup(key = null) {
