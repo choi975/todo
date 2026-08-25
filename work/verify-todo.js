@@ -70,7 +70,7 @@ const completedDailyTodos = new Map();
 let completedTodos = [];
 let counterItems = [
   { id: "counter-swim", name: "游泳", kind: "duration", unit: "小时", incrementValue: 1, color: "#256d85", pinned: 1, sortOrder: 0, active: 1, createdAt: "2026-06-30T00:00:00Z" },
-  { id: "counter-pushup", name: "俯卧撑", kind: "count", unit: "次", incrementValue: 10, color: "#7562a8", pinned: 1, sortOrder: 1000, active: 1, createdAt: "2026-06-30T00:01:00Z" },
+  { id: "counter-fitness", name: "健身", kind: "count", unit: "次", incrementValue: 10, color: "#7562a8", pinned: 1, sortOrder: 1000, active: 1, createdAt: "2026-06-30T00:01:00Z" },
 ];
 let counterRecords = [
   { id: "counter-record-1", itemId: "counter-swim", amount: 3, recordedDate: TODAY, recordedAt: "2026-07-16T10:00:00.000Z", createdAt: "2026-07-16T10:00:00.000Z" },
@@ -364,6 +364,17 @@ const server = http.createServer((req, res) => {
     const button = document.querySelector("#counterHomePeriodToggle");
     return button && button.textContent === "周" && !button.disabled;
   });
+  const periodToggleStyle = await page.locator("#counterHomePeriodToggle").evaluate((node) => ({
+    borderBottomWidth: getComputedStyle(node).borderBottomWidth,
+    textDecoration: getComputedStyle(node).textDecorationLine,
+  }));
+  if (periodToggleStyle.borderBottomWidth !== "0px" || periodToggleStyle.textDecoration !== "none") throw new Error("counter period toggle remains underlined");
+  await page.waitForFunction(() => ["游泳", "健身"].every((name) => {
+    const image = document.querySelector(`.counter-home-activity[aria-label="${name}"] img`);
+    return image?.complete && image.naturalWidth > 0;
+  }));
+  await page.locator('.counter-home-activity[aria-label="游泳"]').hover();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.counter-home-activity[aria-label="游泳"]'), "::after").opacity === "1");
   console.log("verify: counter home periods passed");
 
   const selectedKeyboardTarget = () => page.evaluate(() => {
@@ -378,6 +389,11 @@ const server = http.createServer((req, res) => {
   const dailyFirstId = await page.locator("#workbenchDaily .daily-row").first().getAttribute("data-daily-id");
   const counterIds = await page.locator("#workbenchCounters .counter-home-item").evaluateAll((nodes) => nodes.map((node) => node.dataset.counterItemId));
   await page.locator(`#prefixGroups .todo[data-id="${prefixFirstId}"]`).click();
+  const selectedRowStyle = await page.locator(`#prefixGroups .todo[data-id="${prefixFirstId}"]`).evaluate((node) => ({
+    backgroundColor: getComputedStyle(node).backgroundColor,
+    boxShadow: getComputedStyle(node).boxShadow,
+  }));
+  if (selectedRowStyle.boxShadow !== "none" || selectedRowStyle.backgroundColor === "rgba(0, 0, 0, 0)") throw new Error("selected row styling failed");
   await page.keyboard.press("ArrowRight");
   if (await selectedKeyboardTarget() !== `todo:${todayFirstId}`) throw new Error("ArrowRight card navigation failed");
   await page.keyboard.press("ArrowLeft");
@@ -599,6 +615,12 @@ const server = http.createServer((req, res) => {
   await page.screenshot({ path: counterScreenshotPath, fullPage: true });
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => !document.querySelector("#counterBackdrop.open"));
+  await page.waitForFunction(() => {
+    const image = document.querySelector('.counter-home-activity[aria-label="羽毛球"] img');
+    return image?.complete && image.naturalWidth > 0;
+  });
+  const activityTitles = await page.locator(".counter-home-activity").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-tooltip")));
+  if (!["羽毛球", "游泳", "健身"].every((name) => activityTitles.includes(name))) throw new Error("counter activity images are incomplete");
   console.log("verify: counter feature passed");
 
   await page.keyboard.down("Alt");
