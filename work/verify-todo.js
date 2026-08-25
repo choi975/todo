@@ -32,6 +32,7 @@ const TODAY = toLocalDateString(new Date());
 const TOMORROW = addDays(TODAY, 1);
 const DAY_AFTER = addDays(TODAY, 2);
 const THIRD_DAY = addDays(TODAY, 3);
+const MONTH_START = TODAY.slice(0, 8) + "01";
 const SHOPPING_GROUP = "__shopping__";
 const DAILY_TASK_PREFIX = "（每日任务）";
 
@@ -73,6 +74,7 @@ let counterItems = [
 ];
 let counterRecords = [
   { id: "counter-record-1", itemId: "counter-swim", amount: 3, recordedDate: TODAY, recordedAt: "2026-07-16T10:00:00.000Z", createdAt: "2026-07-16T10:00:00.000Z" },
+  { id: "counter-record-2", itemId: "counter-swim", amount: 2, recordedDate: MONTH_START, recordedAt: "2026-08-01T10:00:00.000Z", createdAt: "2026-08-01T10:00:00.000Z" },
 ];
 
 const server = http.createServer((req, res) => {
@@ -328,7 +330,7 @@ const server = http.createServer((req, res) => {
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   ].find((candidate) => fs.existsSync(candidate));
   const browser = await chromium.launch({ headless: true, executablePath: browserPath });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await page.addInitScript(() => localStorage.setItem("todo-session-token", "test-session"));
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.stack || error.message));
@@ -342,6 +344,27 @@ const server = http.createServer((req, res) => {
     throw error;
   });
   console.log("verify: page loaded");
+
+  const taskMetaRemoved = await page.locator("#prefixGroups .workbench-task-meta, #todayTodos .workbench-task-meta").count() === 0;
+  if (!taskMetaRemoved) throw new Error("today task metadata was not removed");
+  await page.waitForFunction(() => {
+    const button = document.querySelector("#counterHomePeriodToggle");
+    return button && button.textContent === "周" && !button.disabled;
+  });
+  const weeklyHomeTotal = await page.locator('#workbenchCounters .counter-home-item[data-counter-item-id="counter-swim"] strong').innerText();
+  if (weeklyHomeTotal !== "1次") throw new Error(`weekly counter home total failed: ${weeklyHomeTotal}`);
+  await page.locator("#counterHomePeriodToggle").click();
+  await page.waitForFunction(() => {
+    const button = document.querySelector("#counterHomePeriodToggle");
+    const total = document.querySelector('#workbenchCounters .counter-home-item[data-counter-item-id="counter-swim"] strong');
+    return button && button.textContent === "月" && !button.disabled && total?.textContent === "2次";
+  });
+  await page.locator("#counterHomePeriodToggle").click();
+  await page.waitForFunction(() => {
+    const button = document.querySelector("#counterHomePeriodToggle");
+    return button && button.textContent === "周" && !button.disabled;
+  });
+  console.log("verify: counter home periods passed");
 
   const selectedKeyboardTarget = () => page.evaluate(() => {
     const selected = document.querySelector(".todo.selected, .daily-row.selected, .counter-home-item.selected");
@@ -399,6 +422,14 @@ const server = http.createServer((req, res) => {
   const counterOptionInNewExists = await page.locator('#dateSelect option[value="counter"]').count() === 1;
   await page.keyboard.press("Escape");
 
+  const firstDailyRow = page.locator("#workbenchDaily .daily-row").first();
+  await firstDailyRow.locator(".daily-task-text").click();
+  await page.keyboard.press("Space");
+  await page.waitForFunction((id) => document.querySelector(`.daily-row[data-daily-id="${id}"] .daily-home-check`)?.getAttribute("aria-pressed") === "true" && document.querySelector("#status")?.textContent === "已同步", dailyFirstId);
+  await page.keyboard.press("Space");
+  await page.waitForFunction((id) => document.querySelector(`.daily-row[data-daily-id="${id}"] .daily-home-check`)?.getAttribute("aria-pressed") === "false" && document.querySelector("#status")?.textContent === "已同步", dailyFirstId);
+  console.log("verify: daily Space completion passed");
+
   const initialDailyStats = await page.locator(".daily-count-button").first().innerText();
   await page.locator(".daily-count-button").first().click();
   await page.waitForSelector("#checkinBackdrop.open", { timeout: 5000 });
@@ -418,18 +449,23 @@ const server = http.createServer((req, res) => {
   await page.waitForFunction(() => !document.querySelector("#checkinBackdrop.open"));
   const dailyTopButtons = await page.locator('[aria-label^="每日任务置顶："]').count();
   const dailyBottomButtons = await page.locator('[aria-label^="每日任务置底："]').count();
+  const dailyCreateControlsRemoved = await page.locator("#dailyForm, #dailyText, #dailySubmit").count() === 0;
+  const duplicateDailyStatsRemoved = await page.locator("#workbenchDaily .daily-main small").count() === 0;
+  if (dailyTopButtons || dailyBottomButtons || !dailyCreateControlsRemoved || !duplicateDailyStatsRemoved) {
+    throw new Error("obsolete daily controls remain visible");
+  }
 
-  await page.fill("#dailyText", "阅读");
-  await page.locator("#dailyForm").getByRole("button", { name: "新建" }).click();
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "阅读"));
-  await page.getByRole("button", { name: "编辑每日任务：阅读" }).click();
-  await page.fill("#dailyText", "晨间阅读");
-  await page.locator("#dailyForm").getByRole("button", { name: "保存" }).click();
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨间阅读"));
+  await createAutomaticTodo(page, "每天：阅读");
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-task-text")).some((node) => node.textContent === "阅读"));
+  await page.locator("#workbenchDaily .daily-task-text", { hasText: "阅读" }).dblclick();
+  await page.waitForSelector('.daily-row .daily-edit-input[aria-label="编辑每日任务：阅读"]');
+  await page.fill('.daily-row .daily-edit-input[aria-label="编辑每日任务：阅读"]', "晨间阅读");
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
   const dailyEditUpdatedTodos = todos.some((todo) => todo.sourceDailyTaskId && todo.text === "（每日任务）晨间阅读");
   await page.screenshot({ path: dailyScreenshotPath, fullPage: true });
   await page.getByRole("button", { name: "删除每日任务：晨间阅读" }).click();
-  await page.waitForFunction(() => !Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨间阅读"));
+  await page.waitForFunction(() => !Array.from(document.querySelectorAll("#workbenchDaily .daily-task-text")).some((node) => node.textContent === "晨间阅读"));
   console.log("verify: daily manager passed");
 
   const initialPrefixGroupCount = await page.locator("#prefixGroups .prefix-group").count();
@@ -487,7 +523,7 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "买早餐");
   await page.locator("#dateSelect").selectOption("daily");
   await page.keyboard.press("Enter");
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "买早餐"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-task-text")).some((node) => node.textContent === "买早餐"));
   console.log("verify: daily buy create passed");
   const breakfastTaskId = dailyTasks.find((task) => task.text === "（每日任务）买早餐")?.id;
   const createdDailyDates = todos.filter((todo) => todo.sourceDailyTaskId === breakfastTaskId).map((todo) => todo.instanceDate || todo.dueDate);
@@ -496,7 +532,7 @@ const server = http.createServer((req, res) => {
 
   await page.getByRole("button", { name: "删除每日任务：喝水" }).click();
   await page.waitForFunction(() => {
-    return !Array.from(document.querySelectorAll("#dailyItems .daily-main strong")).some((node) => (node.textContent || "") === "喝水");
+    return !Array.from(document.querySelectorAll("#dailyItems .daily-task-text")).some((node) => (node.textContent || "") === "喝水");
   });
   console.log("verify: daily delete passed");
 
@@ -574,7 +610,7 @@ const server = http.createServer((req, res) => {
   await page.fill("#newText", "每天：晨跑");
   await page.locator("#newForm button[type=submit]").click();
   await page.waitForFunction(() => !document.querySelector("#modalBackdrop.open"));
-  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-main strong")).some((node) => node.textContent === "晨跑"));
+  await page.waitForFunction(() => Array.from(document.querySelectorAll("#workbenchDaily .daily-task-text")).some((node) => node.textContent === "晨跑"));
   const autoDailyCreated = dailyTasks.some((task) => task.text === "（每日任务）晨跑");
 
   await page.keyboard.down("Alt");
@@ -651,10 +687,12 @@ const server = http.createServer((req, res) => {
   await mobilePage.screenshot({ path: counterMobileScreenshotPath, fullPage: true });
   await mobilePage.keyboard.press("Escape");
   await mobilePage.waitForFunction(() => !document.querySelector("#counterBackdrop.open"));
-  const mobileDailyControlsVisible = await mobilePage.locator("#dailyForm #dailyText").isVisible()
-    && await mobilePage.locator("#dailyItems .daily-row").count() >= 1
-    && await mobilePage.locator('#dailyItems [aria-label^="编辑每日任务："]').first().isVisible();
-  if (!mobileDailyControlsVisible) throw new Error("daily manager controls hidden on mobile");
+  const mobileDailyRowCount = await mobilePage.locator("#dailyItems .daily-row").count();
+  const mobileDailyStatsVisible = await mobilePage.locator('#dailyItems [aria-label^="补打卡："]').first().isVisible();
+  const mobileDailyDeleteVisible = await mobilePage.locator('#dailyItems [aria-label^="删除每日任务："]').first().isVisible();
+  const mobileDailyCreateControls = await mobilePage.locator("#dailyForm, #dailyText, #dailySubmit").count();
+  const mobileDailyControlsVisible = mobileDailyRowCount >= 1 && mobileDailyStatsVisible && mobileDailyDeleteVisible && mobileDailyCreateControls === 0;
+  if (!mobileDailyControlsVisible) throw new Error(`daily manager controls hidden on mobile: rows=${mobileDailyRowCount}, stats=${mobileDailyStatsVisible}, delete=${mobileDailyDeleteVisible}, create=${mobileDailyCreateControls}`);
   await mobilePage.screenshot({ path: dailyMobileScreenshotPath, fullPage: true });
 
   await browser.close();

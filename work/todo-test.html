@@ -467,79 +467,6 @@
       gap: 14px;
     }
 
-    .daily-modal {
-      width: min(760px, 100%);
-      max-height: min(78vh, 820px);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .daily-manager-body {
-      padding: 18px 20px 20px;
-      display: grid;
-      gap: 14px;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .daily-form {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 10px;
-    }
-
-    .daily-input {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--line-strong);
-      border-radius: 8px;
-      padding: 0 13px;
-      background: #fff;
-      color: var(--text);
-      font: inherit;
-    }
-
-    .daily-input:focus {
-      outline: 3px solid rgba(37, 109, 133, 0.2);
-      border-color: var(--accent);
-    }
-
-    .daily-submit,
-    .daily-cancel {
-      min-height: 44px;
-      padding: 0 18px;
-      border-radius: 8px;
-      font: inherit;
-      font-weight: 760;
-      cursor: pointer;
-    }
-
-    .daily-submit {
-      border: 1px solid var(--accent);
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .daily-cancel {
-      border: 1px solid var(--line-strong);
-      background: #fff;
-      color: var(--text);
-    }
-
-    .daily-cancel[hidden] {
-      display: none;
-    }
-
-    .daily-list-panel {
-      min-height: 180px;
-      max-height: min(55vh, 560px);
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fbf8f1;
-      padding: 6px 12px;
-    }
-
     .daily-items {
       display: grid;
       gap: 7px;
@@ -550,11 +477,11 @@
 
     .daily-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: 25px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 12px;
-      min-height: 62px;
-      padding: 9px 0;
+      gap: 8px;
+      min-height: 50px;
+      padding: 5px 0;
       border-bottom: 1px solid var(--line);
     }
 
@@ -564,15 +491,38 @@
 
     .daily-main {
       min-width: 0;
-      display: grid;
-      gap: 3px;
     }
 
     .daily-task-text {
+      display: block;
+      overflow: hidden;
       font-size: 15px;
       line-height: 1.35;
-      overflow-wrap: anywhere;
       font-weight: 680;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .daily-edit-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 0 9px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .daily-edit-input:focus {
+      border-color: var(--accent);
+      outline: 3px solid rgba(37, 109, 133, 0.16);
+    }
+
+    .daily-row.editing .daily-edit-input {
+      grid-column: 2 / -1;
     }
 
     .daily-count-button {
@@ -602,12 +552,10 @@
     .daily-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 3px;
       flex: 0 0 auto;
     }
 
-    .daily-action,
-    .daily-edit,
     .daily-delete {
       width: 30px;
       height: 30px;
@@ -620,20 +568,11 @@
       cursor: pointer;
     }
 
-    .daily-action:hover,
-    .daily-action:focus-visible,
-    .daily-edit:hover,
-    .daily-edit:focus-visible,
     .daily-delete:hover,
     .daily-delete:focus-visible {
       background: rgba(37, 109, 133, 0.1);
       color: var(--accent);
       outline: 3px solid rgba(37, 109, 133, 0.14);
-    }
-
-    .daily-action.active {
-      background: rgba(37, 109, 133, 0.16);
-      color: var(--accent);
     }
 
     .daily-delete:hover,
@@ -908,15 +847,7 @@
       }
 
       .daily-row {
-        grid-template-columns: 1fr;
-      }
-
-      .daily-form {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .daily-input {
-        grid-column: 1 / -1;
+        grid-template-columns: 25px minmax(0, 1fr) auto;
       }
 
       .completed-item {
@@ -929,8 +860,8 @@
       }
 
       .daily-actions {
-        grid-column: 1;
-        grid-row: 2;
+        grid-column: auto;
+        grid-row: auto;
         justify-content: flex-end;
       }
 
@@ -2691,10 +2622,6 @@
 
     .workbench-focus-todo {
       margin-top: 6px;
-      border: 1px solid #cbd1cd !important;
-      border-radius: 5px !important;
-      background: #eff2f0;
-      padding-left: 9px !important;
     }
 
     .workbench-list .checkbox,
@@ -2709,10 +2636,19 @@
     .prefix-tasks .todo-text,
     .upcoming-task-list .todo-text {
       display: grid;
+      align-self: center;
       gap: 2px;
       min-width: 0;
       font-size: 15px;
       line-height: 1.45;
+    }
+
+    .workbench-list .todo.selected,
+    .prefix-tasks .todo.selected,
+    .upcoming-task-list .todo.selected {
+      border-color: transparent;
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(37, 109, 133, 0.46);
     }
 
     .workbench-task-label {
@@ -2795,102 +2731,22 @@
       padding: 3px 13px 10px;
     }
 
-    .daily-home-manager {
-      display: grid;
-      gap: 8px;
-      min-height: 0;
+
+    .daily-home-list .daily-items {
+      gap: 0;
     }
 
-    .daily-home-manager .daily-form {
-      grid-template-columns: minmax(0, 1fr) auto;
-      padding: 2px 0 4px;
+    .daily-home-list .daily-count-button {
+      min-width: 92px;
+      justify-content: center;
+      padding: 0 5px;
+      font-size: 11px;
     }
 
-    .daily-home-manager .daily-input {
-      min-height: 36px;
-      padding: 0 10px;
-      font-size: 13px;
-    }
-
-    .daily-home-manager .daily-submit,
-    .daily-home-manager .daily-cancel {
-      min-height: 36px;
-      padding: 0 12px;
-      font-size: 13px;
-    }
-
-    .daily-home-manager .daily-list-panel {
-      min-height: 0;
-      max-height: none;
-      overflow: visible;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      padding: 0;
-    }
-
-    .daily-home-manager .daily-row {
-      grid-template-columns: 21px minmax(0, 1fr) auto;
-      min-height: 50px;
-      padding: 5px 0;
-      gap: 7px;
-    }
-
-    .daily-home-manager .daily-main {
-      min-width: 0;
-    }
-
-    .daily-home-manager .daily-main strong {
-      display: block;
-      overflow: hidden;
-      font-size: 13px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .daily-home-manager .daily-main small {
-      display: block;
-      margin-top: 2px;
-      color: var(--wb-muted);
-      font-size: 10px;
-      line-height: 1.2;
-    }
-
-    .daily-home-manager .daily-actions {
-      gap: 2px;
-    }
-
-    .daily-home-manager .daily-actions button {
-      width: 27px;
-      height: 27px;
-      padding: 0;
-    }
-
-    .daily-home-manager .daily-actions .daily-count-button {
-      width: auto;
-      min-width: 58px;
-      padding: 0 4px;
-      font-size: 10px;
-    }
-
-    .daily-home-row {
-      display: grid;
-      grid-template-columns: 21px minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 8px;
-      min-height: 48px;
-      border-bottom: 1px solid #e7e9e7;
-    }
-
-    .daily-home-row:last-child {
-      border-bottom: 0;
-    }
-
-    .daily-home-row.selected,
     .daily-row.selected,
     .counter-home-item.selected {
       background: var(--accent-soft);
-      box-shadow: inset 3px 0 0 var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(37, 109, 133, 0.46);
     }
 
     .daily-home-check {
@@ -2915,38 +2771,30 @@
       font-weight: 800;
     }
 
-    .daily-home-copy {
-      min-width: 0;
-    }
-
-    .daily-home-copy strong,
-    .daily-home-copy small {
-      display: block;
-    }
-
-    .daily-home-copy strong {
-      overflow: hidden;
-      font-size: 14px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .daily-home-copy small {
-      margin-top: 2px;
-      color: var(--wb-muted);
-      font-size: 11px;
-    }
-
-    .daily-home-rate {
-      color: var(--wb-muted);
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
     .counters-home-list {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       min-height: 0;
+    }
+
+    .counter-home-period-toggle {
+      border: 0;
+      border-bottom: 1px solid currentColor;
+      background: transparent;
+      color: var(--wb-accent);
+      padding: 1px 3px;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .counter-home-period-toggle:hover,
+    .counter-home-period-toggle:focus-visible {
+      border-radius: 3px;
+      background: rgba(83, 104, 120, 0.1);
+      outline: 2px solid rgba(83, 104, 120, 0.18);
+      outline-offset: 1px;
     }
 
     .counter-home-item {
@@ -3193,18 +3041,7 @@
             <header class="workbench-panel-head">
               <div><h2 id="dailyHomeTitle">每日任务</h2><span id="dailyHomeSummary"></span></div>
             </header>
-            <div class="workbench-scroll daily-home-list" id="workbenchDaily">
-              <div class="daily-home-manager">
-                <form class="daily-form" id="dailyForm">
-                  <input class="daily-input" id="dailyText" autocomplete="off" maxlength="240" placeholder="输入每日任务名称" aria-label="每日任务名称">
-                  <button class="daily-cancel" id="cancelDailyEdit" type="button" hidden>取消</button>
-                  <button class="daily-submit" id="dailySubmit" type="submit">新建</button>
-                </form>
-                <div class="daily-list-panel">
-                  <ul class="daily-items" id="dailyItems"></ul>
-                </div>
-              </div>
-            </div>
+            <div class="workbench-scroll daily-home-list" id="workbenchDaily"></div>
           </section>
         </div>
       </div>
@@ -3219,7 +3056,7 @@
 
         <section class="workbench-panel counters-home-panel" aria-labelledby="countersHomeTitle">
           <header class="workbench-panel-head">
-            <div><h2 id="countersHomeTitle">累计任务</h2><span>今天</span></div>
+            <div><h2 id="countersHomeTitle">累计任务</h2><button class="counter-home-period-toggle" id="counterHomePeriodToggle" type="button">周</button></div>
             <button class="panel-icon-button" id="openCounterHome" type="button" title="查看累计统计" aria-label="打开累计统计">
               <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"></path><path d="M10 19V5"></path><path d="M16 19v-7"></path><path d="M22 19V3"></path></svg>
             </button>
@@ -3377,6 +3214,10 @@
       counterSelectionMap: loadCounterSelection(),
       counterPeriod: "week",
       counterCursor: toLocalDateString(new Date()),
+      counterHomePeriod: "week",
+      counterHomeTotals: {},
+      counterHomeLoadedPeriod: null,
+      counterHomeLoading: false,
       counterItemPinned: true,
       counterCalendarItemId: null,
       counterCalendarMonth: toLocalDateString(new Date()).slice(0, 7) + "-01",
@@ -3390,6 +3231,8 @@
       editingText: "",
       pendingEditFocusId: null,
       dailyEditingId: null,
+      dailyEditingText: "",
+      pendingDailyEditFocusId: null,
       checkinTaskId: null,
       loading: false,
       readOnly: true,
@@ -3419,6 +3262,7 @@
       workbenchDaily: document.getElementById("workbenchDaily"),
       dailyHomeSummary: document.getElementById("dailyHomeSummary"),
       workbenchCounters: document.getElementById("workbenchCounters"),
+      counterHomePeriodToggle: document.getElementById("counterHomePeriodToggle"),
       openCounterHome: document.getElementById("openCounterHome"),
       openCompleted: document.getElementById("openCompleted"),
       openNew: document.getElementById("openNew"),
@@ -3472,10 +3316,6 @@
       newForm: document.getElementById("newForm"),
       newText: document.getElementById("newText"),
       dateSelect: document.getElementById("dateSelect"),
-      dailyForm: null,
-      dailyText: null,
-      dailySubmit: null,
-      cancelDailyEdit: null,
       dailyItems: null,
     };
 
@@ -3518,6 +3358,7 @@
     els.counterToastUndo.addEventListener("click", undoCounterRecord);
     els.counterShortcuts.addEventListener("click", handleCounterShortcutClick);
     els.workbenchCounters.addEventListener("click", handleCounterShortcutClick);
+    els.counterHomePeriodToggle.addEventListener("click", toggleCounterHomePeriod);
     els.openCounterHome.addEventListener("click", openCounter);
     els.counterFilters.addEventListener("click", handleCounterFilterClick);
     els.counterRecords.addEventListener("click", handleCounterRecordListClick);
@@ -3649,6 +3490,8 @@
         state.counterItems = (Array.isArray(data.counterItems) ? data.counterItems : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
         syncCounterSelection();
         setReadOnly(false);
+        state.counterHomeLoadedPeriod = null;
+        await loadCounterHomeData({ renderNow: false, reportErrors: false });
         state.cacheLoaded = false;
         state.cacheSavedAt = new Date().toISOString();
         saveStateCache();
@@ -3752,7 +3595,6 @@
             draggable: false,
             actions: false,
             displayText: info?.taskText || todo.text,
-            meta: formatWorkbenchDueDate(todo.dueDate),
           }));
         }
         section.append(label, list);
@@ -3770,7 +3612,7 @@
         return;
       }
       todos.forEach((todo, index) => {
-        const row = renderTodo(todo, { meta: todo.createdAt ? "今天" : "" });
+        const row = renderTodo(todo);
         if (index === 0) row.classList.add("workbench-focus-todo");
         els.todayTodos.appendChild(row);
       });
@@ -3833,62 +3675,116 @@
       const completedToday = tasks.filter((task) => Array.isArray(task.checkins) && task.checkins.includes(state.today)).length;
       els.dailyHomeSummary.textContent = `${completedToday}/${tasks.length}`;
       els.workbenchDaily.innerHTML = "";
-      const manager = document.createElement("div");
-      manager.className = "daily-home-manager";
-      manager.innerHTML = `<form class="daily-form" id="dailyForm"><input class="daily-input" id="dailyText" autocomplete="off" maxlength="240" placeholder="输入每日任务名称" aria-label="每日任务名称"><button class="daily-cancel" id="cancelDailyEdit" type="button" hidden>取消</button><button class="daily-submit" id="dailySubmit" type="submit">新建</button></form><div class="daily-list-panel"><ul class="daily-items" id="dailyItems"></ul></div>`;
-      els.workbenchDaily.appendChild(manager);
-      els.dailyForm = manager.querySelector("#dailyForm");
-      els.dailyText = manager.querySelector("#dailyText");
-      els.dailySubmit = manager.querySelector("#dailySubmit");
-      els.cancelDailyEdit = manager.querySelector("#cancelDailyEdit");
-      els.dailyItems = manager.querySelector("#dailyItems");
-      els.dailyForm.addEventListener("submit", submitDailyTask);
-      els.cancelDailyEdit.addEventListener("click", cancelDailyTaskEdit);
+      const list = document.createElement("ul");
+      list.className = "daily-items";
+      list.id = "dailyItems";
+      els.workbenchDaily.appendChild(list);
+      els.dailyItems = list;
       if (!tasks.length) {
         const empty = document.createElement("li");
         empty.className = "daily-empty";
         empty.textContent = "暂无每日任务";
-        els.dailyItems.appendChild(empty);
-        updateInteractionState();
+        list.appendChild(empty);
         return;
       }
       for (const task of tasks) {
         const checked = Array.isArray(task.checkins) && task.checkins.includes(state.today);
+        const editing = state.dailyEditingId === task.id;
         const row = document.createElement("li");
         row.className = "daily-row";
         if (isSelectedDailyTask(task.id)) row.classList.add("selected");
+        if (editing) row.classList.add("editing");
         row.dataset.dailyId = task.id;
         row.addEventListener("click", (event) => {
           if (!event.target.closest("button, input")) selectDailyTask(task.id);
         });
+        row.addEventListener("dblclick", (event) => {
+          if (event.target.closest("button, input")) return;
+          startEditingDailyTask(task);
+        });
         const check = document.createElement("button");
         check.className = "daily-home-check" + (checked ? " checked" : "");
         check.type = "button";
-        check.disabled = state.readOnly;
+        check.disabled = state.readOnly || editing;
         check.setAttribute("aria-pressed", String(checked));
         check.setAttribute("aria-label", `${stripDailyTaskPrefix(task.text)} ${checked ? "今日已完成" : "今日未完成"}`);
         check.addEventListener("click", () => void toggleDailyCheckin(task, state.today, !checked));
 
+        if (editing) {
+          const input = document.createElement("input");
+          input.className = "daily-edit-input";
+          input.type = "text";
+          input.maxLength = 240;
+          input.autocomplete = "off";
+          input.value = state.dailyEditingText;
+          input.setAttribute("aria-label", `编辑每日任务：${stripDailyTaskPrefix(task.text)}`);
+          input.addEventListener("input", () => {
+            state.dailyEditingText = input.value;
+          });
+          let handled = false;
+          const finish = (mode) => {
+            if (handled) return;
+            handled = true;
+            if (mode === "save") {
+              void saveEditingDailyTask(task);
+            } else {
+              cancelDailyTaskEdit();
+            }
+          };
+          input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              finish("save");
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              finish("cancel");
+            }
+          });
+          input.addEventListener("blur", () => finish("save"));
+          row.append(check, input);
+          list.appendChild(row);
+          continue;
+        }
+
         const main = document.createElement("div");
         main.className = "daily-main";
-        const name = document.createElement("strong");
+        const name = document.createElement("div");
+        name.className = "daily-task-text";
         name.textContent = stripDailyTaskPrefix(task.text);
-        const stats = document.createElement("small");
-        stats.textContent = formatDailyTaskStats(task).replace(/\s+/g, " ");
-        main.append(name, stats);
+        main.appendChild(name);
         const actions = document.createElement("div");
         actions.className = "daily-actions";
-        actions.append(
-          createDailyActionButton({ className: "daily-count-button", title: "补打卡", label: `补打卡：${stripDailyTaskPrefix(task.text)}`, icon: formatDailyTaskStats(task), onClick: () => openCheckin(task) }),
-          createDailyActionButton({ className: "daily-edit", title: "编辑每日任务", label: `编辑每日任务：${stripDailyTaskPrefix(task.text)}`, icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>', onClick: () => startEditingDailyTask(task) }),
-          createDailyActionButton({ className: "daily-action" + ((task.placement || "top") === "top" ? " active" : ""), title: "每日任务置顶", label: `每日任务置顶：${stripDailyTaskPrefix(task.text)}`, icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V6"></path><path d="m7 11 5-5 5 5"></path><path d="M5 4h14"></path></svg>', onClick: () => updateDailyTaskPlacement(task, "top") }),
-          createDailyActionButton({ className: "daily-action" + ((task.placement || "top") === "bottom" ? " active" : ""), title: "每日任务置底", label: `每日任务置底：${stripDailyTaskPrefix(task.text)}`, icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12"></path><path d="m7 13 5 5 5-5"></path><path d="M5 20h14"></path></svg>', onClick: () => updateDailyTaskPlacement(task, "bottom") }),
-          createDailyActionButton({ className: "daily-delete", title: "删除每日任务", label: `删除每日任务：${stripDailyTaskPrefix(task.text)}`, icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>', onClick: () => deleteDailyTask(task) }),
-        );
+        const count = createDailyActionButton({
+          className: "daily-count-button",
+          title: "补打卡",
+          label: `补打卡：${stripDailyTaskPrefix(task.text)}，${formatDailyTaskStats(task).trim()}`,
+          icon: formatDailyTaskStats(task),
+          onClick: () => openCheckin(task),
+        });
+        count.dataset.taskId = task.id;
+        const remove = createDailyActionButton({
+          className: "daily-delete",
+          title: "删除每日任务",
+          label: `删除每日任务：${stripDailyTaskPrefix(task.text)}`,
+          icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>',
+          onClick: () => deleteDailyTask(task),
+        });
+        actions.append(count, remove);
         row.append(check, main, actions);
-        els.dailyItems.appendChild(row);
+        list.appendChild(row);
       }
-      updateInteractionState();
+      const pendingId = state.pendingDailyEditFocusId;
+      if (pendingId) {
+        state.pendingDailyEditFocusId = null;
+        window.setTimeout(() => {
+          const input = document.querySelector(`.daily-row[data-daily-id="${CSS.escape(pendingId)}"] .daily-edit-input`);
+          if (input) {
+            input.focus();
+            input.select();
+          }
+        }, 0);
+      }
     }
 
     function renderWorkbenchCounters() {
@@ -3897,6 +3793,13 @@
         .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
       const pinned = active.filter((item) => Number(item.pinned));
       const items = (pinned.length ? pinned : active).slice(0, 3);
+      const periodLabel = state.counterHomePeriod === "month" ? "月" : "周";
+      const nextPeriodLabel = state.counterHomePeriod === "month" ? "周" : "月";
+      const totalsReady = state.counterHomeLoadedPeriod === state.counterHomePeriod;
+      els.counterHomePeriodToggle.textContent = periodLabel;
+      els.counterHomePeriodToggle.disabled = state.counterHomeLoading;
+      els.counterHomePeriodToggle.setAttribute("aria-label", `当前显示本${periodLabel}累计，点击切换为本${nextPeriodLabel}`);
+      els.counterHomePeriodToggle.title = `切换为本${nextPeriodLabel}累计`;
       els.workbenchCounters.innerHTML = "";
       if (!items.length) {
         appendWorkbenchEmpty(els.workbenchCounters, "暂无累计任务");
@@ -3913,7 +3816,11 @@
         const label = document.createElement("span");
         label.textContent = item.name;
         const total = document.createElement("strong");
-        total.textContent = formatCounterValue(Number(item.todayTotal) || 0);
+        total.textContent = state.counterHomeLoading
+          ? "…"
+          : totalsReady
+            ? formatCounterValue(Number(state.counterHomeTotals[item.id]) || 0)
+            : "—";
         const add = document.createElement("button");
         add.type = "button";
         add.disabled = state.readOnly;
@@ -3923,6 +3830,46 @@
         row.append(label, total, add);
         els.workbenchCounters.appendChild(row);
       }
+    }
+
+    function toggleCounterHomePeriod() {
+      if (state.counterHomeLoading) return;
+      state.counterHomePeriod = state.counterHomePeriod === "week" ? "month" : "week";
+      state.counterHomeLoadedPeriod = null;
+      void loadCounterHomeData();
+    }
+
+    async function loadCounterHomeData(options = {}) {
+      const period = state.counterHomePeriod;
+      const range = counterDateRange(period, state.today);
+      state.counterHomeLoading = true;
+      if (options.renderNow !== false) renderWorkbenchCounters();
+      try {
+        const data = await apiGet(`/api/counters?today=${state.today}&from=${range.from}&to=${range.to}`);
+        if (period !== state.counterHomePeriod) return;
+        const totals = {};
+        for (const item of state.counterItems) totals[item.id] = 0;
+        for (const record of Array.isArray(data.records) ? data.records : []) {
+          totals[record.itemId] = (Number(totals[record.itemId]) || 0) + Number(record.amount || 0);
+        }
+        state.counterHomeTotals = totals;
+        state.counterHomeLoadedPeriod = period;
+      } catch (error) {
+        if (period === state.counterHomePeriod) state.counterHomeLoadedPeriod = null;
+        if (options.reportErrors !== false) setStatus("累计加载失败：" + error.message, true);
+      } finally {
+        if (period === state.counterHomePeriod) {
+          state.counterHomeLoading = false;
+          if (options.renderNow !== false) renderWorkbenchCounters();
+        }
+      }
+    }
+
+    function adjustCounterHomeTotal(itemId, amount, recordedDate) {
+      if (state.counterHomeLoadedPeriod !== state.counterHomePeriod) return;
+      const range = counterDateRange(state.counterHomePeriod, state.today);
+      if (recordedDate < range.from || recordedDate > range.to) return;
+      state.counterHomeTotals[itemId] = Math.max(0, (Number(state.counterHomeTotals[itemId]) || 0) + Number(amount || 0));
     }
 
     function configureWorkbenchDropList(list, date) {
@@ -3936,14 +3883,6 @@
       empty.className = "workbench-empty";
       empty.textContent = message;
       container.appendChild(empty);
-    }
-
-    function formatWorkbenchDueDate(date) {
-      const offset = daysFromToday(date);
-      if (offset === 0) return "今天";
-      if (offset === 1) return "明天";
-      if (offset === 2) return "后天";
-      return formatMonthDay(date);
     }
 
     function formatWorkbenchDayLabel(date, offset) {
@@ -4001,6 +3940,7 @@
           recordedAt: new Date().toISOString(),
         });
         if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + 1;
+        adjustCounterHomeTotal(itemId, amount, recordedDate);
         renderCounterShortcuts();
         renderWorkbenchCounters();
         showCounterToast(item, record);
@@ -4037,6 +3977,7 @@
         if (record && record.recordedDate === state.today) {
           const item = state.counterItems.find((entry) => entry.id === record.itemId);
           if (item) item.todayTotal = Math.max(0, (Number(item.todayTotal) || 0) - Number(record.amount || 0));
+          adjustCounterHomeTotal(record.itemId, -Number(record.amount || 0), record.recordedDate);
         } else {
           await refresh();
         }
@@ -4174,19 +4115,19 @@
       void loadCounterData();
     }
 
-    function counterDateRange() {
-      const cursor = parseDate(state.counterCursor);
-      if (state.counterPeriod === "day") {
+    function counterDateRange(period = state.counterPeriod, cursorValue = state.counterCursor) {
+      const cursor = parseDate(cursorValue);
+      if (period === "day") {
         const value = toLocalDateString(cursor);
         return { from: value, to: value, label: `${cursor.getMonth() + 1}月${cursor.getDate()}日` };
       }
-      if (state.counterPeriod === "week") {
+      if (period === "week") {
         const offset = (cursor.getDay() + 6) % 7;
         const from = addDays(toLocalDateString(cursor), -offset);
         const to = addDays(from, 6);
         return { from, to, label: `${formatMonthDay(from)} — ${formatMonthDay(to)}` };
       }
-      if (state.counterPeriod === "month") {
+      if (period === "month") {
         const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
         const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
         return { from: toLocalDateString(first), to: toLocalDateString(last), label: `${first.getFullYear()}年${first.getMonth() + 1}月` };
@@ -5043,6 +4984,13 @@
     }
 
     function activateSelected() {
+      if (state.selected?.type === "daily") {
+        const task = state.dailyTasks.find((item) => item.id === state.selected.id);
+        if (!task) return;
+        const checked = Array.isArray(task.checkins) && task.checkins.includes(state.today);
+        void toggleDailyCheckin(task, state.today, !checked);
+        return;
+      }
       completeSelected(selectedTodoId());
     }
 
@@ -5183,81 +5131,68 @@
       return "";
     }
 
-    async function submitDailyTask(event) {
-      event.preventDefault();
-      if (!canWrite() || state.loading) return;
-      const text = normalizeTodoText(els.dailyText.value);
+    function startEditingDailyTask(task) {
+      if (!task || !canWrite() || state.loading) return;
+      state.selected = dailySelection(task.id);
+      state.dailyEditingId = task.id;
+      state.dailyEditingText = stripDailyTaskPrefix(task.text);
+      state.pendingDailyEditFocusId = task.id;
+      renderWorkbenchDaily();
+    }
+
+    function cancelDailyTaskEdit() {
+      state.dailyEditingId = null;
+      state.dailyEditingText = "";
+      state.pendingDailyEditFocusId = null;
+      renderWorkbenchDaily();
+    }
+
+    async function saveEditingDailyTask(task) {
+      if (!task || state.dailyEditingId !== task.id || !canWrite()) return;
+      const text = normalizeTodoText(state.dailyEditingText);
+      const originalText = normalizeTodoText(stripDailyTaskPrefix(task.text));
+      state.dailyEditingId = null;
+      state.dailyEditingText = "";
+      state.pendingDailyEditFocusId = null;
       if (!text) {
-        els.dailyText.focus();
+        renderWorkbenchDaily();
+        setStatus("每日任务名称不能为空", true);
+        return;
+      }
+      if (text === originalText) {
+        renderWorkbenchDaily();
         return;
       }
 
-      const editingId = state.dailyEditingId;
-      setStatus(editingId ? "保存中..." : "创建中...");
+      const current = state.dailyTasks.find((item) => item.id === task.id);
+      if (current) current.text = text;
+      renderWorkbenchDaily();
+      setStatus("保存中...");
       state.loading = true;
       try {
-        if (editingId) {
-          await apiPost("/api/daily-tasks/update", { id: editingId, text });
-        } else {
-          await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
-        }
-        cancelDailyTaskEdit({ focus: false });
-        await refresh({ preferId: selectedTodoId() });
-        els.dailyText.focus();
+        await apiPost("/api/daily-tasks/update", { id: task.id, text });
+        await refresh();
       } catch (error) {
-        setStatus((editingId ? "保存失败：" : "创建失败：") + error.message, true);
+        setStatus("保存失败：" + error.message, true);
+        await refresh();
       } finally {
         state.loading = false;
       }
     }
 
-    function startEditingDailyTask(task) {
-      if (!task || !canWrite() || state.loading) return;
-      state.dailyEditingId = task.id;
-      els.dailyText.value = stripDailyTaskPrefix(task.text);
-      els.dailySubmit.textContent = "保存";
-      els.cancelDailyEdit.hidden = false;
-      els.dailyText.focus();
-      els.dailyText.select();
-    }
-
-    function cancelDailyTaskEdit(options = {}) {
-      state.dailyEditingId = null;
-      els.dailyText.value = "";
-      els.dailySubmit.textContent = "新建";
-      els.cancelDailyEdit.hidden = true;
-      if (options.focus !== false && els.dailyText) els.dailyText.focus();
-    }
-
     async function deleteDailyTask(task) {
       if (!canWrite() || state.loading) return;
-      if (state.dailyEditingId === task.id) cancelDailyTaskEdit({ focus: false });
+      if (state.dailyEditingId === task.id) {
+        state.dailyEditingId = null;
+        state.dailyEditingText = "";
+        state.pendingDailyEditFocusId = null;
+      }
       setStatus("删除中...");
       try {
         await apiPost("/api/daily-tasks/delete", { id: task.id });
         await refresh();
       } catch (error) {
         setStatus("删除失败：" + error.message, true);
-      }
-    }
-
-    async function updateDailyTaskPlacement(task, placement) {
-      if (!task || !canWrite() || state.loading) return;
-      const normalized = placement === "bottom" ? "bottom" : "top";
-      if ((task.placement || "top") === normalized) return;
-      const current = state.dailyTasks.find((item) => item.id === task.id);
-      if (current) current.placement = normalized;
-      renderWorkbenchDaily();
-      setStatus("保存中...");
-      state.loading = true;
-      try {
-        await apiPost("/api/daily-tasks/placement", { id: task.id, placement: normalized });
-        await refresh({ preferId: selectedTodoId() });
-      } catch (error) {
-        setStatus("保存失败：" + error.message, true);
-        await refresh({ preferId: selectedTodoId() });
-      } finally {
-        state.loading = false;
       }
     }
 
@@ -5479,7 +5414,7 @@
     function selectDailyTask(id, options = {}) {
       state.selected = dailySelection(id);
       if (options.renderNow !== false) render();
-      const node = document.querySelector(`.daily-home-row[data-daily-id="${CSS.escape(id)}"]`);
+      const node = document.querySelector(`.daily-row[data-daily-id="${CSS.escape(id)}"]`);
       if (node) node.scrollIntoView({ block: "nearest" });
     }
 
@@ -5493,7 +5428,7 @@
     function selectionNode(selection) {
       if (!selection) return null;
       if (selection.type === "todo") return document.querySelector(`.todo[data-id="${CSS.escape(selection.id)}"]`);
-      if (selection.type === "daily") return document.querySelector(`.daily-home-row[data-daily-id="${CSS.escape(selection.id)}"]`);
+      if (selection.type === "daily") return document.querySelector(`.daily-row[data-daily-id="${CSS.escape(selection.id)}"]`);
       if (selection.type === "counter") return document.querySelector(`.counter-home-item[data-counter-item-id="${CSS.escape(selection.id)}"]`);
       return null;
     }
@@ -5506,7 +5441,7 @@
     }
 
     function ensureSelected(preferId) {
-      const items = navigationItems();
+      const items = keyboardNavigationItems();
       if (preferId && items.some((item) => item.type === "todo" && item.id === preferId)) {
         state.selected = todoSelection(preferId);
         return;
@@ -5920,12 +5855,6 @@
         els.quickText.placeholder = state.readOnly ? "同步完成后可添加任务" : "添加一个任务…";
       }
       if (els.quickSubmit) els.quickSubmit.disabled = state.readOnly;
-      if (els.dailySubmit && els.cancelDailyEdit && els.dailyText) {
-        els.dailySubmit.disabled = state.readOnly;
-        els.cancelDailyEdit.disabled = state.readOnly;
-        els.dailyText.disabled = state.readOnly;
-        els.dailyText.placeholder = state.readOnly ? "同步完成后可编辑每日任务" : "输入每日任务名称";
-      }
       if (els.openCounterItem) els.openCounterItem.disabled = state.readOnly;
       if (els.openCounterRecord) els.openCounterRecord.disabled = state.readOnly;
     }
