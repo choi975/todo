@@ -345,6 +345,24 @@ const server = http.createServer((req, res) => {
   });
   console.log("verify: page loaded");
 
+  const quickCreateRemoved = await page.locator("#quickForm, #quickText, #quickSubmit, .quick-add").count() === 0;
+  const projectTitle = await page.locator("#prefixTitle").innerText();
+  const projectSummary = await page.locator("#prefixSummary").innerText();
+  const regularTaskTypography = await page.locator("#todayTodos .workbench-task-label").first().evaluate((node) => ({
+    fontSize: getComputedStyle(node).fontSize,
+    fontWeight: getComputedStyle(node).fontWeight,
+    lineHeight: getComputedStyle(node).lineHeight,
+  }));
+  const dailyTaskTypography = await page.locator("#workbenchDaily .daily-task-text").first().evaluate((node) => ({
+    fontSize: getComputedStyle(node).fontSize,
+    fontWeight: getComputedStyle(node).fontWeight,
+    lineHeight: getComputedStyle(node).lineHeight,
+  }));
+  if (!quickCreateRemoved || projectTitle !== "项目" || projectSummary !== "2 组 · 3 项" || JSON.stringify(regularTaskTypography) !== JSON.stringify(dailyTaskTypography)) {
+    throw new Error(`workbench simplification failed: quick=${quickCreateRemoved}, title=${projectTitle}, summary=${projectSummary}, regular=${JSON.stringify(regularTaskTypography)}, daily=${JSON.stringify(dailyTaskTypography)}`);
+  }
+  console.log("verify: workbench simplification passed");
+
   const taskMetaRemoved = await page.locator("#prefixGroups .workbench-task-meta, #todayTodos .workbench-task-meta").count() === 0;
   if (!taskMetaRemoved) throw new Error("today task metadata was not removed");
   await page.waitForFunction(() => {

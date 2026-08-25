@@ -497,8 +497,8 @@
       display: block;
       overflow: hidden;
       font-size: 15px;
-      line-height: 1.35;
-      font-weight: 680;
+      line-height: 1.45;
+      font-weight: 400;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -2298,7 +2298,7 @@
 
     .topbar {
       display: grid;
-      grid-template-columns: minmax(210px, 270px) minmax(360px, 1fr) auto;
+      grid-template-columns: minmax(210px, 1fr) auto;
       gap: 22px;
       min-height: 58px;
       padding: 6px 0 10px;
@@ -2317,60 +2317,6 @@
 
     .date-stamp {
       font-size: 11px;
-    }
-
-    .quick-add {
-      display: grid;
-      grid-template-columns: 18px minmax(0, 1fr) 34px;
-      align-items: center;
-      gap: 10px;
-      width: min(760px, 100%);
-      height: 44px;
-      justify-self: center;
-      border: 1px solid var(--wb-line-strong);
-      border-radius: 7px;
-      padding: 0 5px 0 13px;
-      background: var(--wb-surface);
-      color: #53605a;
-      box-shadow: 0 5px 18px rgba(34, 42, 38, .045);
-    }
-
-    .quick-add:focus-within {
-      border-color: var(--wb-accent);
-      box-shadow: 0 0 0 3px rgba(83, 104, 120, .14);
-    }
-
-    .quick-add > svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .quick-add input {
-      min-width: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--wb-ink);
-    }
-
-    .quick-add input::placeholder {
-      color: #909792;
-    }
-
-    .quick-add button {
-      display: grid;
-      width: 34px;
-      height: 34px;
-      place-items: center;
-      border: 0;
-      border-radius: 5px;
-      background: #29302c;
-      color: #fff;
-    }
-
-    .quick-add button svg {
-      width: 18px;
-      height: 18px;
     }
 
     .topbar-actions {
@@ -2890,7 +2836,6 @@
       outline: 3px solid rgba(83, 104, 120, .13);
     }
 
-    body.read-only .quick-add,
     body.read-only .daily-home-check,
     body.read-only .counter-home-item button {
       opacity: .5;
@@ -2912,7 +2857,7 @@
       }
 
       .topbar {
-        grid-template-columns: minmax(180px, 230px) minmax(280px, 1fr) auto;
+        grid-template-columns: minmax(180px, 1fr) auto;
         gap: 12px;
       }
 
@@ -2952,11 +2897,6 @@
       .topbar-actions {
         grid-column: 2;
         grid-row: 1;
-      }
-
-      .quick-add {
-        grid-column: 1 / -1;
-        grid-row: 2;
       }
 
       .home-button {
@@ -3028,15 +2968,6 @@
         <h1>Todo</h1>
         <div class="date-stamp" id="todayLabel"></div>
       </div>
-      <form class="quick-add" id="quickForm" aria-label="快速新建任务">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 7h12"></path><path d="M6 12h8"></path><path d="M6 17h5"></path>
-        </svg>
-        <input id="quickText" autocomplete="off" maxlength="240" placeholder="添加一个任务…" aria-label="任务内容">
-        <button id="quickSubmit" type="submit" title="添加任务" aria-label="添加任务">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-        </button>
-      </form>
       <div class="counter-shortcuts" id="counterShortcuts" aria-label="累计快捷记录" hidden></div>
       <div class="topbar-actions">
         <a class="home-button" href="https://choi975.github.io/index" title="前往主页" aria-label="前往主页">
@@ -3065,7 +2996,7 @@
     <section class="workbench-grid" aria-label="任务工作台">
       <section class="workbench-panel prefix-panel" aria-labelledby="prefixTitle">
         <header class="workbench-panel-head">
-          <div><h2 id="prefixTitle">前缀任务</h2><span id="prefixSummary"></span></div>
+          <div><h2 id="prefixTitle">项目</h2><span id="prefixSummary"></span></div>
         </header>
         <div class="workbench-scroll prefix-groups" id="prefixGroups"></div>
       </section>
@@ -3303,9 +3234,6 @@
       groups: document.getElementById("groups"),
       status: document.getElementById("status"),
       todayLabel: document.getElementById("todayLabel"),
-      quickForm: document.getElementById("quickForm"),
-      quickText: document.getElementById("quickText"),
-      quickSubmit: document.getElementById("quickSubmit"),
       prefixGroups: document.getElementById("prefixGroups"),
       prefixSummary: document.getElementById("prefixSummary"),
       todayTodos: document.getElementById("todayTodos"),
@@ -3427,7 +3355,6 @@
     els.counterColors.addEventListener("click", handleCounterColorClick);
     els.counterItemPinned.addEventListener("click", toggleCounterPinned);
     els.newForm.addEventListener("submit", submitNewItem);
-    els.quickForm.addEventListener("submit", submitQuickItem);
     document.addEventListener("keydown", handleKeys);
 
     const authEls = {
@@ -3623,16 +3550,16 @@
     function renderWorkbenchPrefixes() {
       const groups = prefixGroupsForWorkbench();
       const total = groups.reduce((sum, group) => sum + group.todos.length, 0);
-      els.prefixSummary.textContent = `${groups.length} 组 · ${total} 项 · 全部展开`;
+      els.prefixSummary.textContent = `${groups.length} 组 · ${total} 项`;
       els.prefixGroups.innerHTML = "";
       if (!groups.length) {
-        appendWorkbenchEmpty(els.prefixGroups, "暂无前缀任务");
+        appendWorkbenchEmpty(els.prefixGroups, "暂无项目");
         return;
       }
       for (const group of groups) {
         const section = document.createElement("section");
         section.className = "prefix-group";
-        section.setAttribute("aria-label", `${group.label} 前缀任务`);
+        section.setAttribute("aria-label", `${group.label} 项目任务`);
 
         const label = document.createElement("div");
         label.className = "prefix-label";
@@ -5068,38 +4995,6 @@
       return;
     }
 
-    async function submitQuickItem(event) {
-      event.preventDefault();
-      if (!canWrite() || state.loading) return;
-      const parsed = parseAutomaticNewItem(els.quickText.value);
-      const text = parsed.text;
-      const target = parsed.type || parsed.dueDate || state.today;
-      if (!text) {
-        els.quickText.focus();
-        return;
-      }
-      setStatus("创建中...");
-      try {
-        if (target === "daily") {
-          await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
-        } else if (target === "counter") {
-          await apiPost("/api/counter-items", {
-            name: text,
-            pinned: true,
-            color: COUNTER_COLORS[0],
-          });
-        } else {
-          await apiPost("/api/todos", { text, dueDate: target, today: state.today });
-        }
-        els.quickText.value = "";
-        await refresh();
-        els.quickText.focus();
-      } catch (error) {
-        setStatus("创建失败：" + error.message, true);
-        els.quickText.focus();
-      }
-    }
-
     async function submitNewItem(event) {
       event.preventDefault();
       if (!canWrite()) return;
@@ -5920,11 +5815,6 @@
       els.openNew.disabled = state.readOnly;
       els.openNew.title = state.readOnly ? "等待同步完成后可新建" : "新建（Alt+N）";
       els.openNew.setAttribute("aria-label", state.readOnly ? "等待同步完成后可新建" : "新建待办事项");
-      if (els.quickText) {
-        els.quickText.disabled = state.readOnly;
-        els.quickText.placeholder = state.readOnly ? "同步完成后可添加任务" : "添加一个任务…";
-      }
-      if (els.quickSubmit) els.quickSubmit.disabled = state.readOnly;
       if (els.openCounterItem) els.openCounterItem.disabled = state.readOnly;
       if (els.openCounterRecord) els.openCounterRecord.disabled = state.readOnly;
     }
