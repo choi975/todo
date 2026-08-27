@@ -3924,8 +3924,8 @@
         .filter((item) => Number(item.active ?? 1) && Number(item.pinned))
         .sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))
         .slice(0, 3);
-      const shortcuts = pinned.map((item, index) => `
-        <button class="counter-shortcut" type="button" data-counter-id="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color || COUNTER_COLORS[0])}" title="记录 ${escapeHtml(item.name)}，今天累计 ${escapeHtml(formatCounterValue(Number(item.todayTotal) || 0))}（Alt+${index + 1}）">
+      const shortcuts = pinned.map((item) => `
+        <button class="counter-shortcut" type="button" data-counter-id="${escapeHtml(item.id)}" style="--counter-color:${escapeHtml(item.color || COUNTER_COLORS[0])}" title="记录 ${escapeHtml(item.name)}，今天累计 ${escapeHtml(formatCounterValue(Number(item.todayTotal) || 0))}">
           <i class="counter-dot"></i>
           <span class="counter-shortcut-label"><strong>${escapeHtml(item.name)}</strong><small>点击 +1次</small></span>
         </button>`).join("");
@@ -4877,11 +4877,15 @@
       const counterOpen = isCounterOpen();
       const counterItemOpen = isCounterItemOpen();
       const counterRecordOpen = isCounterRecordOpen();
-      if (event.altKey && /^[123]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+      const quickLinks = {
+        "1": "https://badminton.choi975.workers.dev/",
+        "2": "https://wenti.choi975.workers.dev/",
+        "3": "https://sien-day.choi975.workers.dev/",
+        "4": "https://choi975.github.io/xizang/",
+      };
+      if (event.altKey && /^[1234]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
-        if (!canWrite()) return;
-        const item = state.counterItems.filter((entry) => Number(entry.pinned)).sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder))[Number(event.key) - 1];
-        if (item) void recordCounterQuick(item.id);
+        window.location.href = quickLinks[event.key];
         return;
       }
       if (event.altKey && event.key.toLowerCase() === "n" && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
