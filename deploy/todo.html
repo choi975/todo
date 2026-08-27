@@ -2359,7 +2359,7 @@
 
     .workbench-grid {
       display: grid;
-      grid-template-columns: minmax(330px, 35fr) minmax(390px, 41fr) minmax(290px, 24fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       height: auto;
       min-height: 0;
@@ -2547,7 +2547,7 @@
 
     .prefix-tasks .todo {
       min-height: 43px;
-      padding-right: 0;
+      padding-right: 64px;
     }
 
     .shopping-list .todo {
@@ -3179,6 +3179,8 @@
     const STATE_CACHE_KEY = "todo-state-cache-v1";
     const STATE_CACHE_VERSION = 1;
     const COUNTER_SELECTION_KEY = "todo-counter-selection-v1";
+    const SAVE_DEBOUNCE_MS = 2000;
+    const LOCAL_ID_PREFIX = "local-";
     const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
     const CALENDAR_WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
     const COUNTER_COLORS = ["#256d85", "#b5672e", "#7562a8", "#2f7d4f", "#a04f58"];
@@ -3228,6 +3230,20 @@
       dropTargetId: null,
       dropSide: null,
       dropDate: null,
+      pendingMutations: [],
+      saveTimer: null,
+      flushing: false,
+      flushRequested: false,
+      dirty: false,
+      pendingPreferId: null,
+      localCounter: 0,
+      localTodoByTempId: new Map(),
+      localTodoRealByTempId: new Map(),
+      localDailyByTempId: new Map(),
+      localDailyRealByTempId: new Map(),
+      localCounterByTempId: new Map(),
+      localCounterRealByTempId: new Map(),
+      localRecordRealByTempId: new Map(),
     };
 
     const els = {
@@ -3356,6 +3372,13 @@
     els.counterItemPinned.addEventListener("click", toggleCounterPinned);
     els.newForm.addEventListener("submit", submitNewItem);
     document.addEventListener("keydown", handleKeys);
+    window.addEventListener("pagehide", () => {
+      if (!state.pendingMutations.length) return;
+      const pending = state.pendingMutations.splice(0);
+      for (const mutation of pending) {
+        void mutation.run().catch(() => {});
+      }
+    });
 
     const authEls = {
       backdrop: document.getElementById("authBackdrop"),
@@ -3470,7 +3493,9 @@
         state.dailyTasks = Array.isArray(data.dailyTasks) ? data.dailyTasks : [];
         state.completedCount = Number(data.completedCount) || 0;
         state.counterItems = (Array.isArray(data.counterItems) ? data.counterItems : []).map((item) => ({ ...item, kind: "count", unit: "次", incrementValue: 1 }));
+        resolveCounterSelectionMap();
         syncCounterSelection();
+        resolveLocalSelection();
         setReadOnly(false);
         state.counterHomeLoadedPeriod = null;
         await loadCounterHomeData({ renderNow: false, reportErrors: false });
@@ -3575,7 +3600,6 @@
           const info = prefixInfo(todo);
           list.appendChild(renderTodo(todo, {
             draggable: false,
-            actions: false,
             displayText: info?.taskText || todo.text,
           }));
         }
@@ -3924,30 +3948,40 @@
     }
 
     async function recordCounterQuick(itemId, options = {}) {
-      if (!canWrite() || state.loading) return null;
+      if (!canWrite()) return null;
       const item = state.counterItems.find((entry) => entry.id === itemId);
       if (!item) return null;
       const amount = 1;
       const recordedDate = options.recordedDate || state.today;
-      setStatus("记录中...");
-      try {
-        const record = await apiPost("/api/counter-records", {
-          itemId,
+      const recordedAt = new Date().toISOString();
+      const record = {
+        id: localId(),
+        itemId,
+        amount,
+        recordedDate,
+        recordedAt,
+        __local: true,
+      };
+
+      if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + 1;
+      adjustCounterHomeTotal(itemId, amount, recordedDate);
+      state.counterRecords.unshift(record);
+      renderCounterShortcuts();
+      renderWorkbenchCounters();
+      if (isCounterOpen()) renderCounterView();
+      if (isCounterRecordOpen()) renderCounterCalendar();
+      showCounterToast(item, record);
+
+      enqueueMutation(async () => {
+        const realItemId = state.localCounterRealByTempId.get(itemId) || itemId;
+        const saved = await apiPost("/api/counter-records", {
+          itemId: realItemId,
           recordedDate,
-          recordedAt: new Date().toISOString(),
+          recordedAt,
         });
-        if (recordedDate === state.today) item.todayTotal = (Number(item.todayTotal) || 0) + 1;
-        adjustCounterHomeTotal(itemId, amount, recordedDate);
-        renderCounterShortcuts();
-        renderWorkbenchCounters();
-        showCounterToast(item, record);
-        if (isCounterOpen()) await loadCounterData();
-        setStatus("已记录");
-        return record;
-      } catch (error) {
-        setStatus("记录失败：" + error.message, true);
-        return null;
-      }
+        if (saved?.id) state.localRecordRealByTempId.set(record.id, saved.id);
+      }, { key: `counter-record-create:${record.id}` });
+      return record;
     }
 
     function showCounterToast(item, record) {
@@ -3968,24 +4002,31 @@
       const id = state.counterToastRecordId;
       if (!id) return;
       const record = state.counterRecords.find((entry) => entry.id === id);
-      try {
-        await apiPost("/api/counter-records/delete", { id });
-        hideCounterToast();
-        if (record && record.recordedDate === state.today) {
-          const item = state.counterItems.find((entry) => entry.id === record.itemId);
-          if (item) item.todayTotal = Math.max(0, (Number(item.todayTotal) || 0) - Number(record.amount || 0));
-          adjustCounterHomeTotal(record.itemId, -Number(record.amount || 0), record.recordedDate);
+      hideCounterToast();
+      if (!record) return;
+
+      if (record.__local) {
+        const realId = state.localRecordRealByTempId.get(record.id);
+        if (realId) {
+          enqueueMutation(() => apiPost("/api/counter-records/delete", { id: realId }), { key: `counter-record-delete:${record.id}` });
         } else {
-          await refresh();
+          cancelQueuedMutation(`counter-record-create:${record.id}`);
         }
-        renderCounterShortcuts();
-        renderWorkbenchCounters();
-        if (isCounterOpen()) await loadCounterData();
-        if (isCounterRecordOpen()) await loadCounterCalendar();
-        setStatus("已撤销记录");
-      } catch (error) {
-        setStatus("撤销失败：" + error.message, true);
+      } else {
+        enqueueMutation(() => apiPost("/api/counter-records/delete", { id: record.id }), { key: `counter-record-delete:${record.id}` });
       }
+
+      state.counterRecords = state.counterRecords.filter((entry) => entry.id !== record.id);
+      if (record.recordedDate === state.today) {
+        const item = state.counterItems.find((entry) => entry.id === record.itemId);
+        if (item) item.todayTotal = Math.max(0, (Number(item.todayTotal) || 0) - Number(record.amount || 0));
+      }
+      adjustCounterHomeTotal(record.itemId, -Number(record.amount || 0), record.recordedDate);
+      renderCounterShortcuts();
+      renderWorkbenchCounters();
+      if (isCounterOpen()) renderCounterView();
+      if (isCounterRecordOpen()) renderCounterCalendar();
+      setStatus("已撤销记录");
     }
 
     function openCounter() {
@@ -4226,14 +4267,27 @@
     async function handleCounterRecordListClick(event) {
       const button = event.target.closest("[data-counter-record-delete]");
       if (!button || !canWrite() || !window.confirm("删除这条累计记录？")) return;
-      try {
-        await apiPost("/api/counter-records/delete", { id: button.dataset.counterRecordDelete });
-        await refresh();
-        await loadCounterData();
-        setStatus("记录已删除");
-      } catch (error) {
-        setStatus("删除失败：" + error.message, true);
+      const id = button.dataset.counterRecordDelete;
+      const record = state.counterRecords.find((entry) => entry.id === id);
+      if (record?.__local) {
+        const realId = state.localRecordRealByTempId.get(id);
+        if (realId) {
+          enqueueMutation(() => apiPost("/api/counter-records/delete", { id: realId }), { key: `counter-record-delete:${id}` });
+        } else {
+          cancelQueuedMutation(`counter-record-create:${id}`);
+        }
+      } else {
+        enqueueMutation(() => apiPost("/api/counter-records/delete", { id }), { key: `counter-record-delete:${id}` });
       }
+      state.counterRecords = state.counterRecords.filter((entry) => entry.id !== id);
+      if (record?.recordedDate === state.today) {
+        const item = state.counterItems.find((entry) => entry.id === record.itemId);
+        if (item) item.todayTotal = Math.max(0, (Number(item.todayTotal) || 0) - Number(record.amount || 0));
+        adjustCounterHomeTotal(record.itemId, -Number(record.amount || 0), record.recordedDate);
+      }
+      renderCounterShortcuts();
+      renderWorkbenchCounters();
+      if (isCounterOpen()) renderCounterView();
     }
 
     function selectedCounterItems() {
@@ -4292,32 +4346,61 @@
       }
       const id = els.counterItemId.value;
       const payload = { id, name, color: els.counterItemColor.value, pinned: state.counterItemPinned };
-      try {
-        const saved = await apiPost(id ? "/api/counter-items/update" : "/api/counter-items", payload);
-        if (!id && saved?.id) state.counterSelectionMap[saved.id] = true;
+
+      if (id) {
+        const item = state.counterItems.find((entry) => entry.id === id);
+        if (item) {
+          item.name = name;
+          item.color = els.counterItemColor.value;
+          item.pinned = state.counterItemPinned ? 1 : 0;
+        }
         closeCounterItem({ returnFocus: false });
-        await refresh();
-        if (isCounterOpen()) await loadCounterData();
-        setStatus(id ? "记录项已更新" : "记录项已创建");
-      } catch (error) {
-        setStatus("保存失败：" + error.message, true);
+        renderCounterShortcuts();
+        renderWorkbenchCounters();
+        if (isCounterOpen()) renderCounterView();
+        enqueueMutation(() => apiPost("/api/counter-items/update", payload), { key: `counter-update:${id}` });
+        setStatus("记录项已更新");
+        return;
       }
+
+      const item = createLocalCounterItem(name);
+      item.color = els.counterItemColor.value;
+      item.pinned = state.counterItemPinned ? 1 : 0;
+      state.counterSelectionMap[item.id] = true;
+      syncCounterSelection();
+      saveCounterSelection();
+      closeCounterItem({ returnFocus: false });
+      renderCounterShortcuts();
+      renderWorkbenchCounters();
+      if (isCounterOpen()) renderCounterView();
+      enqueueMutation(async () => {
+        const saved = await apiPost("/api/counter-items", {
+          name,
+          pinned: state.counterItemPinned,
+          color: els.counterItemColor.value,
+        });
+        if (saved?.id) state.localCounterRealByTempId.set(item.id, saved.id);
+      }, { key: `counter-create:${item.id}` });
+      setStatus("记录项已创建");
     }
 
     async function archiveCounterItem(id) {
       if (!canWrite()) return;
       const item = state.counterItems.find((entry) => entry.id === id);
       if (!item || !window.confirm(`删除“${item.name}”？删除后不再显示这个记录项，但历史记录仍然保留。`)) return;
-      try {
-        await apiPost("/api/counter-items/archive", { id });
-        delete state.counterSelectionMap[id];
-        saveCounterSelection();
-        await refresh();
-        await loadCounterData();
-        setStatus("记录项已删除，历史记录仍保留");
-      } catch (error) {
-        setStatus("删除失败：" + error.message, true);
+      if (isLocalId(id)) {
+        cancelQueuedMutation(`counter-create:${id}`);
+      } else {
+        enqueueMutation(() => apiPost("/api/counter-items/archive", { id }), { key: `counter-archive:${id}` });
       }
+      state.counterItems = state.counterItems.filter((entry) => entry.id !== id);
+      delete state.counterSelectionMap[id];
+      syncCounterSelection();
+      saveCounterSelection();
+      renderCounterShortcuts();
+      renderWorkbenchCounters();
+      if (isCounterOpen()) renderCounterView();
+      setStatus("记录项已删除，历史记录仍保留");
     }
 
     function openCounterRecord() {
@@ -4779,23 +4862,12 @@
     }
 
     async function restoreCompletedTodo(id) {
-      if (!id || !canWrite() || state.loading) return;
-      setStatus("恢复中...");
-      state.loading = true;
-      try {
-        await apiPost("/api/todos/restore", { id, today: state.today });
-        state.completedTodos = state.completedTodos.filter((todo) => todo.id !== id);
-        state.completedCount = Math.max(0, (Number(state.completedCount) || 0) - 1);
-        renderCompletedBadge();
-        renderCompletedList();
-        await refresh({ preferId: id });
-      } catch (error) {
-        setStatus("恢复失败：" + error.message, true);
-        await loadCompletedTodos();
-        await refresh();
-      } finally {
-        state.loading = false;
-      }
+      if (!id || !canWrite()) return;
+      state.completedTodos = state.completedTodos.filter((todo) => todo.id !== id);
+      state.completedCount = Math.max(0, (Number(state.completedCount) || 0) - 1);
+      renderCompletedBadge();
+      renderCompletedList();
+      enqueueMutation(() => apiPost("/api/todos/restore", { id, today: state.today }), { preferId: id, key: `todo-restore:${id}` });
     }
 
     function handleKeys(event) {
@@ -4867,10 +4939,10 @@
       if (isPlainArrow && event.key === "ArrowRight") moveKeyboardCard(1);
       if (isTabShortcut) moveKeyboardTab();
       if (event.key === " " && canWrite()) activateSelected();
-      if (isPinShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "top");
-      if (isBottomShortcut && canWrite() && !prefixInfo(selectedTodo())) moveTodoToEdge(selectedTodoId(), "bottom");
-      if (isAltMoveUp && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("up");
-      if (isAltMoveDown && selectedTodoId() && canWrite() && !prefixInfo(selectedTodo())) moveSelectedTodo("down");
+      if (isPinShortcut && canWrite() && selectedTodoId()) moveTodoToEdge(selectedTodoId(), "top");
+      if (isBottomShortcut && canWrite() && selectedTodoId()) moveTodoToEdge(selectedTodoId(), "bottom");
+      if (isAltMoveUp && selectedTodoId() && canWrite()) moveSelectedTodo("up");
+      if (isAltMoveDown && selectedTodoId() && canWrite()) moveSelectedTodo("down");
       if (isCollapseShortcut) collapseSelectedTodoGroup();
     }
 
@@ -4937,47 +5009,29 @@
 
     async function moveSelectedTodo(direction) {
       const id = selectedTodoId();
-      if (!id || !canWrite() || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.editingId) return;
       optimisticallyMove(id, direction);
       render();
-      try {
-        await apiPost("/api/todos/move", { id, direction, today: state.today });
-        await refresh({ preferId: id });
-      } catch (error) {
-        setStatus("移动失败：" + error.message, true);
-        await refresh({ preferId: id });
-      }
+      enqueueMutation(() => apiPost("/api/todos/move", { id, direction, today: state.today }), { preferId: id, key: `todo-move:${id}:${direction}` });
     }
 
     async function moveTodoToEdge(id, edge) {
-      if (!id || !canWrite() || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.editingId) return;
       selectTodo(id, { renderNow: false });
       optimisticallyMoveToEdge(id, edge);
       render();
-      try {
-        await apiPost(edge === "bottom" ? "/api/todos/bottom" : "/api/todos/top", { id, today: state.today });
-        await refresh({ preferId: id });
-      } catch (error) {
-        setStatus((edge === "bottom" ? "置底失败：" : "置顶失败：") + error.message, true);
-        await refresh({ preferId: id });
-      }
+      enqueueMutation(() => apiPost(edge === "bottom" ? "/api/todos/bottom" : "/api/todos/top", { id, today: state.today }), { preferId: id, key: `todo-edge:${id}:${edge}` });
     }
 
     async function completeSelected(id) {
-      if (!id || !canWrite() || state.loading || state.editingId) return;
+      if (!id || !canWrite() || state.editingId) return;
       const items = navigationItems();
       const currentIndex = Math.max(0, items.findIndex((item) => item.type === "todo" && item.id === id));
       const fallback = items[currentIndex + 1] || items[currentIndex - 1] || null;
       state.todos = state.todos.filter((todo) => todo.id !== id);
       state.selected = fallback || null;
       render();
-      try {
-        await apiPost("/api/todos/complete", { id, today: state.today });
-        await refresh({ preferId: selectedTodoId() });
-      } catch (error) {
-        setStatus("完成失败：" + error.message, true);
-        await refresh();
-      }
+      enqueueMutation(() => apiPost("/api/todos/complete", { id, today: state.today }), { preferId: selectedTodoId() || undefined, key: `todo-complete:${id}` });
     }
 
     function activateSelected() {
@@ -5006,25 +5060,40 @@
         return;
       }
       closeModal();
-      setStatus("创建中...");
-      try {
-        if (target === "daily") {
-          await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
-        } else if (target === "counter") {
-          await apiPost("/api/counter-items", {
+      els.newText.value = "";
+
+      if (target === "daily") {
+        const task = createLocalDailyTask(text);
+        state.selected = dailySelection(task.id);
+        renderWorkbenchDaily();
+        enqueueMutation(async () => {
+          const saved = await apiPost("/api/daily-tasks", { text, today: state.today, days: DAY_COUNT });
+          if (saved?.id) state.localDailyRealByTempId.set(task.id, saved.id);
+        }, { preferId: task.id, key: `daily-create:${task.id}` });
+      } else if (target === "counter") {
+        const item = createLocalCounterItem(text);
+        syncCounterSelection();
+        saveCounterSelection();
+        renderWorkbenchCounters();
+        renderCounterShortcuts();
+        enqueueMutation(async () => {
+          const saved = await apiPost("/api/counter-items", {
             name: text,
             pinned: true,
             color: COUNTER_COLORS[0],
           });
-        } else {
-          await apiPost("/api/todos", { text, dueDate: target, today: state.today });
-        }
-        els.newText.value = "";
-        await refresh();
-      } catch (error) {
-        setStatus("创建失败：" + error.message, true);
-        openModal();
+          if (saved?.id) state.localCounterRealByTempId.set(item.id, saved.id);
+        }, { key: `counter-create:${item.id}` });
+      } else {
+        const todo = createLocalTodo(text, target);
+        state.selected = todoSelection(todo.id);
+        render();
+        enqueueMutation(async () => {
+          const saved = await apiPost("/api/todos", { text, dueDate: target, today: state.today });
+          if (saved?.id) state.localTodoRealByTempId.set(todo.id, saved.id);
+        }, { preferId: todo.id, key: `todo-create:${todo.id}` });
       }
+      setStatus("已加入，稍后保存");
     }
 
     function parseAutomaticNewItem(value) {
@@ -5097,7 +5166,7 @@
     }
 
     function startEditingDailyTask(task) {
-      if (!task || !canWrite() || state.loading) return;
+      if (!task || !canWrite()) return;
       state.selected = dailySelection(task.id);
       state.dailyEditingId = task.id;
       state.dailyEditingText = stripDailyTaskPrefix(task.text);
@@ -5132,33 +5201,20 @@
       const current = state.dailyTasks.find((item) => item.id === task.id);
       if (current) current.text = text;
       renderWorkbenchDaily();
-      setStatus("保存中...");
-      state.loading = true;
-      try {
-        await apiPost("/api/daily-tasks/update", { id: task.id, text });
-        await refresh();
-      } catch (error) {
-        setStatus("保存失败：" + error.message, true);
-        await refresh();
-      } finally {
-        state.loading = false;
-      }
+      enqueueMutation(() => apiPost("/api/daily-tasks/update", { id: task.id, text }), { key: `daily-update:${task.id}` });
     }
 
     async function deleteDailyTask(task) {
-      if (!canWrite() || state.loading) return;
+      if (!canWrite()) return;
       if (state.dailyEditingId === task.id) {
         state.dailyEditingId = null;
         state.dailyEditingText = "";
         state.pendingDailyEditFocusId = null;
       }
-      setStatus("删除中...");
-      try {
-        await apiPost("/api/daily-tasks/delete", { id: task.id });
-        await refresh();
-      } catch (error) {
-        setStatus("删除失败：" + error.message, true);
-      }
+      state.dailyTasks = state.dailyTasks.filter((item) => item.id !== task.id);
+      if (state.selected?.type === "daily" && state.selected.id === task.id) state.selected = null;
+      renderWorkbenchDaily();
+      enqueueMutation(() => apiPost("/api/daily-tasks/delete", { id: task.id }), { key: `daily-delete:${task.id}` });
     }
 
     function openModal() {
@@ -5264,7 +5320,7 @@
     }
 
     async function toggleDailyCheckin(task, date, checked) {
-      if (!task || !canWrite() || state.loading) return;
+      if (!task || !canWrite()) return;
       const checkins = new Set(Array.isArray(task.checkins) ? task.checkins : []);
       if (checked) {
         checkins.add(date);
@@ -5276,19 +5332,7 @@
       task.totalCount = Math.max(0, daysBetween(task.startDate || state.today, state.today) + 1);
       renderWorkbenchDaily();
       renderCheckin();
-      setStatus("保存中...");
-      state.loading = true;
-      try {
-        await apiPost("/api/daily-tasks/checkin", { id: task.id, date, checked, today: state.today });
-        await refresh({ preferId: selectedTodoId() });
-        renderCheckin();
-      } catch (error) {
-        setStatus("保存失败：" + error.message, true);
-        await refresh({ preferId: selectedTodoId() });
-        renderCheckin();
-      } finally {
-        state.loading = false;
-      }
+      enqueueMutation(() => apiPost("/api/daily-tasks/checkin", { id: task.id, date, checked, today: state.today }), { key: `daily-checkin:${task.id}:${date}:${checked}` });
     }
 
     function isNewModalOpen() {
@@ -5308,7 +5352,7 @@
     }
 
     function startEditingTodo(todo) {
-      if (!todo || !canWrite() || state.loading) return;
+      if (!todo || !canWrite()) return;
       endDrag();
       state.selected = todoSelection(todo.id);
       state.editingId = todo.id;
@@ -5340,20 +5384,7 @@
 
       if (text === normalizeTodoText(originalText)) return;
 
-      setStatus("保存中...");
-      state.loading = true;
-      try {
-        await apiPost("/api/todos/update", { id, text, today: state.today });
-        await refresh({ preferId: selectedTodoId() || id });
-      } catch (error) {
-        const message = error.message;
-        try {
-          await refresh({ preferId: selectedTodoId() || id });
-        } catch {}
-        setStatus("保存失败：" + message, true);
-      } finally {
-        state.loading = false;
-      }
+      enqueueMutation(() => apiPost("/api/todos/update", { id, text, today: state.today }), { preferId: selectedTodoId() || id, key: `todo-update:${id}` });
     }
 
     function clearEditingState() {
@@ -5550,11 +5581,21 @@
     }
 
     function optimisticallyMove(id, direction) {
-      return;
+      const todo = todoById(id);
+      if (!todo) return;
+      const date = todo.dueDate;
+      const rows = todoRowsForDate(date);
+      const reordered = moveTodoRowByStep(rows, id, direction);
+      writeTodoOrderForDate(date, reordered);
     }
 
     function optimisticallyMoveToEdge(id, edge) {
-      return;
+      const todo = todoById(id);
+      if (!todo) return;
+      const date = todo.dueDate;
+      const rows = todoRowsForDate(date);
+      const reordered = moveTodoRowToEdge(rows, id, edge);
+      writeTodoOrderForDate(date, reordered);
     }
 
     function writeDaySortOrders(orderedTodos) {
@@ -5607,15 +5648,11 @@
       endDrag();
       for (let i = 0; i < steps; i++) optimisticallyMove(id, direction);
       render();
-      try {
+      enqueueMutation(async () => {
         for (let i = 0; i < steps; i++) {
           await apiPost("/api/todos/move", { id, direction, today: state.today });
         }
-        await refresh({ preferId: id });
-      } catch (error) {
-        setStatus("拖动失败：" + error.message, true);
-        await refresh({ preferId: id });
-      }
+      }, { preferId: id, key: `todo-drag:${id}:${direction}:${steps}` });
     }
 
     function resolveDropTarget(list, clientY, draggingId) {
@@ -5884,7 +5921,7 @@
       return parseApiResponse(response);
     }
 
-    async function apiPost(path, body) {
+    async function apiPost(path, body, options = {}) {
       const token = sessionToken();
       const response = await fetch(API_BASE + path, {
         method: "POST",
@@ -5893,6 +5930,7 @@
           ...(token ? { "X-Todo-Session": token } : {}),
         },
         body: JSON.stringify(body),
+        keepalive: Boolean(options.keepalive),
       });
       return parseApiResponse(response);
     }
@@ -5963,6 +6001,320 @@
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
+    }
+
+    function localId() {
+      state.localCounter += 1;
+      return `${LOCAL_ID_PREFIX}${Date.now().toString(36)}-${state.localCounter}`;
+    }
+
+    function isLocalId(value) {
+      return typeof value === "string" && value.startsWith(LOCAL_ID_PREFIX);
+    }
+
+    function scheduleSave() {
+      window.clearTimeout(state.saveTimer);
+      state.dirty = true;
+      state.saveTimer = window.setTimeout(flushPendingMutations, SAVE_DEBOUNCE_MS);
+    }
+
+    function enqueueMutation(run, options = {}) {
+      if (!canWrite()) return false;
+      state.pendingMutations.push({ run, key: options.key || null });
+      if (options.preferId && !state.pendingPreferId) state.pendingPreferId = options.preferId;
+      scheduleSave();
+      return true;
+    }
+
+    function cancelQueuedMutation(key) {
+      if (!key) return false;
+      const index = state.pendingMutations.findIndex((mutation) => mutation.key === key);
+      if (index < 0) return false;
+      state.pendingMutations.splice(index, 1);
+      if (!state.pendingMutations.length) {
+        window.clearTimeout(state.saveTimer);
+        state.dirty = false;
+        state.pendingPreferId = null;
+      }
+      return true;
+    }
+
+    async function flushPendingMutations() {
+      if (state.flushing) {
+        state.flushRequested = true;
+        return;
+      }
+      if (!state.pendingMutations.length) {
+        state.dirty = false;
+        state.pendingPreferId = null;
+        return;
+      }
+
+      state.flushing = true;
+      state.flushRequested = false;
+      const batch = state.pendingMutations.splice(0);
+      const preferId = state.pendingPreferId;
+      state.pendingPreferId = null;
+      state.dirty = false;
+
+      setStatus("保存中...");
+      let firstError = null;
+      for (const mutation of batch) {
+        try {
+          await mutation.run();
+        } catch (error) {
+          firstError = firstError || error;
+        }
+      }
+
+      if (firstError) {
+        setStatus("保存失败：" + firstError.message, true);
+      } else {
+        setStatus("已保存");
+      }
+
+      state.flushing = false;
+
+      if (state.pendingMutations.length) {
+        scheduleSave();
+        return;
+      }
+
+      if (state.flushRequested) {
+        state.flushRequested = false;
+        scheduleSave();
+        return;
+      }
+
+      await refresh({ preferId });
+    }
+
+    function todoRowsForDate(date) {
+      return state.todos
+        .filter((todo) => todo.dueDate === date)
+        .sort(sortTodos);
+    }
+
+    function writeTodoOrderForDate(date, orderedRows) {
+      const orderById = new Map(orderedRows.map((row, index) => [row.id, index * 1000]));
+      for (const todo of state.todos) {
+        if (todo.dueDate === date && orderById.has(todo.id)) todo.sortOrder = orderById.get(todo.id);
+      }
+    }
+
+    function partitionTodoRows(rows) {
+      const topDaily = [];
+      const bottomDaily = [];
+      const prefixGroups = new Map();
+      const prefixOrder = [];
+      const regular = [];
+
+      for (const row of rows) {
+        const placement = row.sourceDailyTaskId ? "top" : null;
+        if (placement === "top") {
+          topDaily.push(row);
+          continue;
+        }
+
+        const prefix = prefixInfo(row)?.key || "";
+        if (!prefix) {
+          regular.push(row);
+          continue;
+        }
+        if (!prefixGroups.has(prefix)) {
+          prefixGroups.set(prefix, { key: prefix, rows: [] });
+          prefixOrder.push(prefix);
+        }
+        prefixGroups.get(prefix).rows.push(row);
+      }
+
+      return {
+        topDaily,
+        prefixGroups: prefixOrder.map((prefix) => prefixGroups.get(prefix)),
+        regular,
+        bottomDaily,
+      };
+    }
+
+    function flattenTodoParts(parts) {
+      return parts.topDaily
+        .concat(...parts.prefixGroups.map((group) => group.rows))
+        .concat(parts.regular, parts.bottomDaily);
+    }
+
+    function locateTodoPrefixRow(parts, id) {
+      for (let groupIndex = 0; groupIndex < parts.prefixGroups.length; groupIndex += 1) {
+        const rowIndex = parts.prefixGroups[groupIndex].rows.findIndex((row) => row.id === id);
+        if (rowIndex >= 0) return { groupIndex, rowIndex };
+      }
+      return null;
+    }
+
+    function moveTodoRowByStep(rows, id, direction) {
+      const parts = partitionTodoRows(rows);
+      const dailyMoved = moveLocalRowsByStep(parts.topDaily, id, direction) || moveLocalRowsByStep(parts.bottomDaily, id, direction);
+      if (dailyMoved) return flattenTodoParts(parts);
+
+      const located = locateTodoPrefixRow(parts, id);
+      if (located) {
+        const group = parts.prefixGroups[located.groupIndex];
+        if (direction === "up") {
+          if (located.rowIndex > 0) {
+            const [row] = group.rows.splice(located.rowIndex, 1);
+            group.rows.splice(located.rowIndex - 1, 0, row);
+            return flattenTodoParts(parts);
+          }
+          if (located.groupIndex > 0) {
+            const [movedGroup] = parts.prefixGroups.splice(located.groupIndex, 1);
+            parts.prefixGroups.splice(located.groupIndex - 1, 0, movedGroup);
+            return flattenTodoParts(parts);
+          }
+          return rows;
+        }
+        if (located.rowIndex < group.rows.length - 1) {
+          const [row] = group.rows.splice(located.rowIndex, 1);
+          group.rows.splice(located.rowIndex + 1, 0, row);
+          return flattenTodoParts(parts);
+        }
+        if (located.groupIndex < parts.prefixGroups.length - 1) {
+          const [movedGroup] = parts.prefixGroups.splice(located.groupIndex, 1);
+          parts.prefixGroups.splice(located.groupIndex + 1, 0, movedGroup);
+          return flattenTodoParts(parts);
+        }
+        return rows;
+      }
+
+      const regularIndex = parts.regular.findIndex((row) => row.id === id);
+      if (regularIndex < 0) return rows;
+      const targetIndex = direction === "up" ? regularIndex - 1 : regularIndex + 1;
+      if (targetIndex < 0 || targetIndex >= parts.regular.length) return rows;
+      const [row] = parts.regular.splice(regularIndex, 1);
+      parts.regular.splice(targetIndex, 0, row);
+      return flattenTodoParts(parts);
+    }
+
+    function moveTodoRowToEdge(rows, id, edge) {
+      const parts = partitionTodoRows(rows);
+      const located = locateTodoPrefixRow(parts, id);
+      if (located) {
+        const group = parts.prefixGroups[located.groupIndex];
+        const [row] = group.rows.splice(located.rowIndex, 1);
+        if (edge === "top") {
+          group.rows.unshift(row);
+          if (located.rowIndex === 0 && located.groupIndex > 0) {
+            const [movedGroup] = parts.prefixGroups.splice(located.groupIndex, 1);
+            parts.prefixGroups.splice(located.groupIndex - 1, 0, movedGroup);
+          }
+        } else {
+          const wasLast = located.rowIndex === group.rows.length;
+          group.rows.push(row);
+          if (wasLast && located.groupIndex < parts.prefixGroups.length - 1) {
+            const [movedGroup] = parts.prefixGroups.splice(located.groupIndex, 1);
+            parts.prefixGroups.splice(located.groupIndex + 1, 0, movedGroup);
+          }
+        }
+        return flattenTodoParts(parts);
+      }
+
+      const regularIndex = parts.regular.findIndex((row) => row.id === id);
+      if (regularIndex < 0) return rows;
+      if ((edge === "top" && regularIndex === 0) || (edge === "bottom" && regularIndex === parts.regular.length - 1)) return rows;
+      const [row] = parts.regular.splice(regularIndex, 1);
+      if (edge === "bottom") {
+        parts.regular.push(row);
+      } else {
+        parts.regular.unshift(row);
+      }
+      return flattenTodoParts(parts);
+    }
+
+    function moveLocalRowsByStep(rows, id, direction) {
+      const index = rows.findIndex((row) => row.id === id);
+      if (index < 0) return false;
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= rows.length) return false;
+      const [row] = rows.splice(index, 1);
+      rows.splice(targetIndex, 0, row);
+      return true;
+    }
+
+    function resolveLocalSelection() {
+      const selection = state.selected;
+      if (!selection) return;
+      if (selection.type === "todo" && state.localTodoRealByTempId.has(selection.id)) {
+        selection.id = state.localTodoRealByTempId.get(selection.id);
+      }
+      if (selection.type === "daily" && state.localDailyRealByTempId.has(selection.id)) {
+        selection.id = state.localDailyRealByTempId.get(selection.id);
+      }
+      if (selection.type === "counter" && state.localCounterRealByTempId.has(selection.id)) {
+        selection.id = state.localCounterRealByTempId.get(selection.id);
+      }
+    }
+
+    function resolveCounterSelectionMap() {
+      for (const [tempId, realId] of state.localCounterRealByTempId) {
+        if (state.counterSelectionMap[tempId]) {
+          delete state.counterSelectionMap[tempId];
+          state.counterSelectionMap[realId] = true;
+        }
+      }
+    }
+
+    function createLocalTodo(text, dueDate) {
+      const id = localId();
+      const todo = {
+        id,
+        text,
+        dueDate,
+        sortOrder: Date.now(),
+        sourceDailyTaskId: null,
+        createdAt: new Date().toISOString(),
+        __local: true,
+      };
+      state.todos.push(todo);
+      state.localTodoByTempId.set(id, { text, dueDate });
+      return todo;
+    }
+
+    function createLocalDailyTask(text) {
+      const id = localId();
+      const task = {
+        id,
+        text: "（每日任务）" + text,
+        sortOrder: Date.now(),
+        startDate: state.today,
+        checkins: [],
+        completedCount: 0,
+        totalCount: 0,
+        createdAt: new Date().toISOString(),
+        __local: true,
+      };
+      state.dailyTasks.push(task);
+      state.localDailyByTempId.set(id, { text });
+      return task;
+    }
+
+    function createLocalCounterItem(name) {
+      const id = localId();
+      const item = {
+        id,
+        name,
+        kind: "count",
+        unit: "次",
+        incrementValue: 1,
+        color: COUNTER_COLORS[0],
+        pinned: 1,
+        sortOrder: Date.now(),
+        active: 1,
+        todayTotal: 0,
+        createdAt: new Date().toISOString(),
+        __local: true,
+      };
+      state.counterItems.push(item);
+      state.counterSelectionMap[id] = true;
+      state.localCounterByTempId.set(id, { name });
+      return item;
     }
   </script>
 </body>
