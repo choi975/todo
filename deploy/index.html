@@ -2503,7 +2503,9 @@
     }
 
     .prefix-label {
-      padding: 10px 9px 8px 0;
+      display: flex;
+      align-items: center;
+      padding: 0 9px 0 0;
       border-right: 1px solid #e6e9e7;
     }
 
@@ -3590,9 +3592,7 @@
         label.className = "prefix-label";
         const name = document.createElement("strong");
         name.textContent = group.label;
-        const count = document.createElement("span");
-        count.textContent = `${group.todos.length} 项`;
-        label.append(name, count);
+        label.append(name);
 
         const list = document.createElement("div");
         list.className = "prefix-tasks";
