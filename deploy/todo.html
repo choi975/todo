@@ -4884,7 +4884,12 @@
         "4": "https://sien-day.choi975.workers.dev/",
         "5": "https://choi975.github.io/xizang/",
       };
-      if (event.altKey && /^[12345]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+      if (event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey && /^[12345]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
+        event.preventDefault();
+        window.open(quickLinks[event.key], "_blank", "noopener,noreferrer");
+        return;
+      }
+      if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && /^[12345]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
         window.location.href = quickLinks[event.key];
         return;
