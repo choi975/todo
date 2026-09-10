@@ -1,7 +1,7 @@
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Todo-Session",
+  "Access-Control-Allow-Headers": "Content-Type, X-Todo-Session, X-Badminton-Integration-Token",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -12,6 +12,8 @@ const DAILY_TASK_PREFIX = "（每日任务）";
 const SESSION_TTL_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 const AUTH_MAX_FAILED_ATTEMPTS = 5;
 const AUTH_LOCK_MS = 10 * 60 * 1000;
+const BADMINTON_COUNTER_ITEM_NAME = "羽毛球";
+const BADMINTON_COUNTER_SOURCE = "badminton-session";
 
 export default {
   async fetch(request, env) {
@@ -22,6 +24,10 @@ export default {
     try {
       const url = new URL(request.url);
       const path = url.pathname.replace(/\/+$/, "") || "/";
+
+      if (request.method === "POST" && path === "/api/integrations/badminton/counter") {
+        return await recordBadmintonIntegration(request, env);
+      }
 
       if (request.method === "POST" && path === "/api/auth/login") {
         return await login(request, env);
@@ -233,6 +239,50 @@ async function getCounterItemsForDate(db, date) {
      ORDER BY i.pinned DESC, i.sort_order ASC, i.created_at ASC`
   ).bind(date).all();
   return items.results || [];
+}
+
+async function recordBadmintonIntegration(request, env) {
+  if (request.headers.get("origin")) return json({ error: "server_to_server_only" }, 403);
+  const expectedToken = String(env.BADMINTON_COUNTER_INTEGRATION_SECRET || "").trim();
+  const providedToken = String(request.headers.get("X-Badminton-Integration-Token") || "").trim();
+  if (!expectedToken || !providedToken || !timingSafeEqualText(expectedToken, providedToken)) {
+    return json({ error: "unauthorized" }, 401);
+  }
+
+  const body = await readJson(request);
+  const sessionId = String(body?.sessionId || "").trim();
+  const recordedDate = isDateString(body?.recordedDate) ? body.recordedDate : "";
+  if (!/^\d+$/.test(sessionId) || !recordedDate) return json({ error: "invalid_integration_payload" }, 400);
+
+  await ensureSchema(env.DB);
+  const item = await env.DB.prepare(
+    `SELECT id FROM counter_items WHERE name = ? AND active = 1 ORDER BY created_at ASC LIMIT 1`
+  ).bind(BADMINTON_COUNTER_ITEM_NAME).first();
+  if (!item) return json({ error: "counter_item_not_found" }, 409);
+
+  const recordId = `${BADMINTON_COUNTER_SOURCE}:${sessionId}`;
+  const recordedAt = normalizeRecordedAt(body?.recordedAt);
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO integration_counter_records (source, source_id, counter_record_id, created_at)
+       VALUES (?, ?, ?, CURRENT_TIMESTAMP)`
+    ).bind(BADMINTON_COUNTER_SOURCE, sessionId, recordId),
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO counter_records (id, item_id, amount, recorded_date, recorded_at, created_at)
+       VALUES (?, ?, 1, ?, ?, CURRENT_TIMESTAMP)`
+    ).bind(recordId, item.id, recordedDate, recordedAt),
+  ]);
+  const recorded = Number(results[1]?.meta?.changes) > 0;
+  return json({ recorded, alreadyRecorded: !recorded, recordId }, recorded ? 201 : 200);
+}
+
+function timingSafeEqualText(left, right) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
 }
 
 async function createCounterItem(db, body) {
@@ -949,6 +999,7 @@ async function getSchemaInfo(db) {
     hasDailyTaskCheckinsChecked: dailyTaskCheckinsColumns.has("checked"),
     hasCounterItemsTable: tableNames.has("counter_items"),
     hasCounterRecordsTable: tableNames.has("counter_records"),
+    hasIntegrationCounterRecordsTable: tableNames.has("integration_counter_records"),
   };
 
   return cachedSchema;
@@ -956,7 +1007,7 @@ async function getSchemaInfo(db) {
 
 async function ensureSchema(db) {
   const schema = await getSchemaInfo(db);
-  if (!schema.hasDailyTasksTable || !schema.hasTodosTable || !schema.hasDailyTaskInstancesTable || !schema.hasDailyTaskCheckins || !schema.hasCounterItemsTable || !schema.hasCounterRecordsTable) {
+  if (!schema.hasDailyTasksTable || !schema.hasTodosTable || !schema.hasDailyTaskInstancesTable || !schema.hasDailyTaskCheckins || !schema.hasCounterItemsTable || !schema.hasCounterRecordsTable || !schema.hasIntegrationCounterRecordsTable) {
     await ensureBaseTables(db);
     cachedSchema = null;
     return ensureSchema(db);
@@ -1013,6 +1064,17 @@ async function ensureSchema(db) {
         recorded_date TEXT NOT NULL,
         recorded_at TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`
+    );
+  }
+  if (!schema.hasIntegrationCounterRecordsTable) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS integration_counter_records (
+        source TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        counter_record_id TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (source, source_id)
       )`
     );
   }
@@ -1092,6 +1154,13 @@ async function ensureBaseTables(db) {
       recorded_date TEXT NOT NULL,
       recorded_at TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS integration_counter_records (
+      source TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      counter_record_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (source, source_id)
     )`,
     `CREATE TABLE IF NOT EXISTS login_attempts (
       ip TEXT PRIMARY KEY,

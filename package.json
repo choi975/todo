@@ -1,7 +1,8 @@
 {
   "name": "todo",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "test": "node work/verify-badminton-integration.js",
+    "deploy": "npm test && wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.24.0"

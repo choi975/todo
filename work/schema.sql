@@ -60,3 +60,11 @@ CREATE TABLE IF NOT EXISTS counter_records (
   recorded_at TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS integration_counter_records (
+  source TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  counter_record_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (source, source_id)
+);
