@@ -86,7 +86,7 @@ const context = vm.createContext({
   ensureSchema: async () => ({}),
   readJson: async (request) => request.json(),
 });
-vm.runInContext(`${script}\nthis.timingSafeEqualText = (left, right) => left === right;`, context);
+vm.runInContext(script, context);
 
 async function call(db, token, body) {
   const request = new Request("https://todo.example/api/integrations/badminton/counter", {
@@ -119,6 +119,13 @@ async function call(db, token, body) {
   assert.equal(browserResponse.status, 403);
 
   const db = makeDb();
+  const health = await context.recordBadmintonIntegration(new Request("https://todo.example/api/integrations/badminton/counter", {
+    headers: { "X-Badminton-Integration-Token": "test-secret" },
+  }), { DB: db, BADMINTON_COUNTER_INTEGRATION_SECRET: "test-secret" });
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).ok, true);
+  assert.equal(db.records.size, 0);
+  assert.equal(db.integrations.size, 0);
   const created = await call(db, "test-secret", { sessionId: 123, recordedDate: "2026-09-10", recordedAt: "2026-09-10T12:00:00Z" });
   assert.equal(created.status, 201);
   assert.deepEqual(await created.json(), { recorded: true, alreadyRecorded: false, recordId: "badminton-session:123" });

@@ -25,7 +25,7 @@ export default {
       const url = new URL(request.url);
       const path = url.pathname.replace(/\/+$/, "") || "/";
 
-      if (request.method === "POST" && path === "/api/integrations/badminton/counter") {
+      if (["GET", "POST"].includes(request.method) && path === "/api/integrations/badminton/counter") {
         return await recordBadmintonIntegration(request, env);
       }
 
@@ -247,6 +247,15 @@ async function recordBadmintonIntegration(request, env) {
   const providedToken = String(request.headers.get("X-Badminton-Integration-Token") || "").trim();
   if (!expectedToken || !providedToken || !timingSafeEqualText(expectedToken, providedToken)) {
     return json({ error: "unauthorized" }, 401);
+  }
+
+  if (request.method === "GET") {
+    const item = await env.DB.prepare(
+      `SELECT id FROM counter_items WHERE name = ? AND active = 1 ORDER BY created_at ASC LIMIT 1`
+    ).bind(BADMINTON_COUNTER_ITEM_NAME).first();
+    return item
+      ? json({ ok: true, counterItemName: BADMINTON_COUNTER_ITEM_NAME })
+      : json({ error: "counter_item_not_found" }, 409);
   }
 
   const body = await readJson(request);
