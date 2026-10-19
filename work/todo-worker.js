@@ -743,7 +743,7 @@ async function setDailyTaskCheckin(db, id, date, checked, today) {
   ).bind(DAILY_COUNTER_START_DATE, rawDailyTaskId).first();
   if (!existing) return { ok: false };
 
-  const startDate = normalizeStartDate(existing.startDate);
+  const startDate = dailyTaskStatsStartDate(existing.startDate, today);
   if (date < startDate || date > today) return { ok: false, error: "date_out_of_range" };
 
   await setDailyTaskCheckinValue(db, existing.id, date, checked);
@@ -758,9 +758,9 @@ async function attachDailyTaskStats(db, tasks, today) {
   const checkinRows = await db.prepare(
     `SELECT daily_task_id AS dailyTaskId, checkin_date AS checkinDate
      FROM daily_task_checkins
-     WHERE checked = 1 AND checkin_date <= ?
+     WHERE checked = 1 AND checkin_date BETWEEN ? AND ?
      ORDER BY checkin_date ASC`
-  ).bind(today).all();
+  ).bind(today.slice(0, 7) + "-01", today).all();
   const checkinsByTask = new Map();
   for (const row of checkinRows.results || []) {
     if (!checkinsByTask.has(row.dailyTaskId)) checkinsByTask.set(row.dailyTaskId, []);
@@ -769,8 +769,9 @@ async function attachDailyTaskStats(db, tasks, today) {
 
   return tasks.map((task) => {
     const startDate = normalizeStartDate(task.startDate);
-    const total = Math.max(0, daysBetween(startDate, today) + 1);
-    const checkins = (checkinsByTask.get(task.id) || []).filter((date) => date >= startDate && date <= today);
+    const statsStartDate = dailyTaskStatsStartDate(startDate, today);
+    const total = Math.max(0, daysBetween(statsStartDate, today) + 1);
+    const checkins = (checkinsByTask.get(task.id) || []).filter((date) => date >= statsStartDate && date <= today);
     const completed = new Set(checkins).size;
     return {
       ...task,
@@ -790,8 +791,9 @@ async function syncDailyCheckinsFromCompletedTodos(db, today, schema = null) {
      FROM todos t
      LEFT JOIN daily_task_instances dti ON dti.${resolvedSchema.dailyInstancesTodoColumn} = t.id
      LEFT JOIN daily_tasks dt ON CAST(dt.id AS TEXT) = t.source_daily_task_id
-     WHERE t.completed_at IS NOT NULL AND t.source_daily_task_id IS NOT NULL`
-  ).bind(DAILY_COUNTER_START_DATE).all();
+     WHERE t.completed_at IS NOT NULL AND t.source_daily_task_id IS NOT NULL
+       AND COALESCE(dti.${resolvedSchema.dailyInstancesDateColumn}, t.due_date) BETWEEN ? AND ?`
+  ).bind(DAILY_COUNTER_START_DATE, today.slice(0, 7) + "-01", today).all();
 
   const operations = [];
   for (const row of rows.results || []) {
@@ -1651,6 +1653,11 @@ function isDateString(value) {
 
 function normalizeStartDate(value) {
   return isDateString(value) ? value : DAILY_COUNTER_START_DATE;
+}
+
+// Keep the original task start date; only the reporting/check-in window resets monthly.
+function dailyTaskStatsStartDate(startDate, today) {
+  return maxDate(normalizeStartDate(startDate), today.slice(0, 7) + "-01");
 }
 
 function maxDate(left, right) {

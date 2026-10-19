@@ -4784,11 +4784,26 @@
       els.dateSelect.value = state.today;
     }
 
+    function getDailyTaskStats(task) {
+      const monthStart = state.today.slice(0, 7) + "-01";
+      const taskStart = task.startDate || state.today;
+      const startDate = taskStart > monthStart ? taskStart : monthStart;
+      const checkins = [...new Set(Array.isArray(task.checkins) ? task.checkins : [])]
+        .filter((date) => date >= startDate && date <= state.today).sort();
+      const totalCount = Math.max(0, daysBetween(startDate, state.today) + 1);
+      const completedCount = checkins.length;
+      return {
+        startDate,
+        checkins,
+        completedCount,
+        totalCount,
+        completionPercent: totalCount > 0 ? Number(((completedCount / totalCount) * 100).toFixed(2)) : 0,
+      };
+    }
+
     function formatDailyTaskStats(task) {
-      const completed = Number(task.completedCount) || 0;
-      const total = Number(task.totalCount) || 0;
-      const percent = total > 0 ? (completed / total) * 100 : 0;
-      return `${completed}/${total}   ${percent.toFixed(2)}%`;
+      const stats = getDailyTaskStats(task);
+      return `${stats.completedCount}/${stats.totalCount}   ${stats.completionPercent.toFixed(2)}%`;
     }
 
     async function loadCompletedTodos() {
@@ -5291,9 +5306,9 @@
       els.checkinGrid.innerHTML = "";
       if (!task) return;
 
-      const startDate = task.startDate || state.today;
+      const { startDate, checkins } = getDailyTaskStats(task);
       els.checkinTitle.textContent = stripDailyTaskPrefix(task.text);
-      els.checkinSummary.textContent = `打卡统计：${formatDailyTaskStats(task)}，可补打卡范围：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`;
+      els.checkinSummary.textContent = `本月打卡：${formatDailyTaskStats(task)}，可补打卡范围：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`;
 
       for (const name of CALENDAR_WEEKDAYS) {
         const weekday = document.createElement("div");
@@ -5309,7 +5324,7 @@
         els.checkinGrid.appendChild(spacer);
       }
 
-      const checkedDates = new Set(Array.isArray(task.checkins) ? task.checkins : []);
+      const checkedDates = new Set(checkins);
       for (let date = startDate; date <= state.today; date = addDays(date, 1)) {
         const parsedDate = parseDate(date);
         const button = document.createElement("button");
@@ -5322,7 +5337,7 @@
         button.setAttribute("aria-pressed", checked ? "true" : "false");
         button.setAttribute("aria-label", `${formatShortDate(date)} ${checked ? "已打卡" : "未打卡"}`);
         button.innerHTML = `
-          <span class="checkin-date">${parsedDate.getMonth() + 1}/${parsedDate.getDate()}</span>
+          <span class="checkin-date">${parsedDate.getDate()}</span>
           <span class="checkin-mark">${checked ? "✓" : ""}</span>
         `;
         button.addEventListener("click", () => toggleDailyCheckin(task, date, !checked));
@@ -5332,7 +5347,9 @@
 
     async function toggleDailyCheckin(task, date, checked) {
       if (!task || !canWrite()) return;
-      const checkins = new Set(Array.isArray(task.checkins) ? task.checkins : []);
+      const stats = getDailyTaskStats(task);
+      if (date < stats.startDate || date > state.today) return;
+      const checkins = new Set(stats.checkins);
       if (checked) {
         checkins.add(date);
       } else {
@@ -5340,7 +5357,8 @@
       }
       task.checkins = Array.from(checkins).sort();
       task.completedCount = task.checkins.length;
-      task.totalCount = Math.max(0, daysBetween(task.startDate || state.today, state.today) + 1);
+      task.totalCount = stats.totalCount;
+      task.completionPercent = task.totalCount > 0 ? Number(((task.completedCount / task.totalCount) * 100).toFixed(2)) : 0;
       renderWorkbenchDaily();
       renderCheckin();
       enqueueMutation(() => apiPost("/api/daily-tasks/checkin", { id: task.id, date, checked, today: state.today }), { key: `daily-checkin:${task.id}:${date}:${checked}` });
@@ -6297,7 +6315,8 @@
         startDate: state.today,
         checkins: [],
         completedCount: 0,
-        totalCount: 0,
+        totalCount: 1,
+        completionPercent: 0,
         createdAt: new Date().toISOString(),
         __local: true,
       };
