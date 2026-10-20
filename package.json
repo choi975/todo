@@ -2,9 +2,11 @@
   "name": "todo",
   "scripts": {
     "test": "node work/verify-badminton-integration.js && node work/verify-daily-monthly.js",
-    "deploy": "npm test && wrangler deploy"
+    "deploy": "npm test && wrangler deploy",
+    "test:ui": "node work/verify-daily-checkin-dialog.js"
   },
   "devDependencies": {
+    "playwright": "^1.61.1",
     "wrangler": "^4.24.0"
   }
 }

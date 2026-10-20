@@ -589,17 +589,72 @@
     }
 
     .checkin-modal {
-      width: min(520px, 100%);
-      max-height: min(78vh, 760px);
+      width: min(1040px, 100%);
+      max-height: min(85vh, 900px);
+      max-height: min(85dvh, 900px);
       display: flex;
       flex-direction: column;
     }
 
+    .checkin-modal .modal-head {
+      flex-shrink: 0;
+    }
+
     .checkin-body {
+      min-height: 0;
       padding: 16px 20px 20px;
       display: grid;
+      gap: 16px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-color: var(--line-strong) transparent;
+    }
+
+    .checkin-tasks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+      align-items: start;
+      gap: 16px;
+    }
+
+    .checkin-task {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: grid;
       gap: 12px;
-      overflow: hidden;
+    }
+
+    .checkin-task-title {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .checkin-task-stats {
+      margin-top: 6px;
+      color: var(--accent);
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .checkin-task-range {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .checkin-body {
+        padding: 12px;
+      }
+
+      .checkin-task {
+        padding: 12px;
+      }
     }
 
     .checkin-summary {
@@ -612,9 +667,7 @@
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 6px;
-      max-height: min(48vh, 430px);
-      overflow: auto;
-      padding-right: 2px;
+      min-width: 0;
     }
 
     .checkin-weekday {
@@ -625,12 +678,12 @@
     }
 
     .checkin-spacer {
-      min-height: 42px;
+      min-height: 44px;
     }
 
     .checkin-day {
       min-width: 0;
-      min-height: 42px;
+      min-height: 44px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
@@ -642,7 +695,12 @@
       cursor: pointer;
     }
 
-    .checkin-day:hover,
+    .checkin-day:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .checkin-day:hover:not(:disabled),
     .checkin-day:focus-visible {
       border-color: var(--accent);
       outline: 3px solid rgba(37, 109, 133, 0.14);
@@ -3070,11 +3128,11 @@
     </section>
   </div>
 
-  <div class="modal-backdrop" id="checkinBackdrop" role="dialog" aria-modal="true" aria-labelledby="checkinTitle">
+  <div class="modal-backdrop" id="checkinBackdrop" role="dialog" aria-modal="true" aria-labelledby="checkinTitle" aria-describedby="checkinSummary">
     <section class="modal checkin-modal">
       <div class="modal-head">
-        <div class="modal-title" id="checkinTitle">补打卡</div>
-        <button class="icon-button" id="closeCheckin" type="button" title="关闭补打卡">
+        <div class="modal-title" id="checkinTitle">每日任务补打卡</div>
+        <button class="icon-button" id="closeCheckin" type="button" title="关闭补打卡" aria-label="关闭补打卡">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M6 6l12 12"></path>
             <path d="M18 6L6 18"></path>
@@ -3083,7 +3141,7 @@
       </div>
       <div class="checkin-body">
         <div class="checkin-summary" id="checkinSummary"></div>
-        <div class="checkin-grid" id="checkinGrid"></div>
+        <div class="checkin-tasks" id="checkinTasks"></div>
       </div>
     </section>
   </div>
@@ -3275,7 +3333,7 @@
       closeCheckin: document.getElementById("closeCheckin"),
       checkinTitle: document.getElementById("checkinTitle"),
       checkinSummary: document.getElementById("checkinSummary"),
-      checkinGrid: document.getElementById("checkinGrid"),
+      checkinTasks: document.getElementById("checkinTasks"),
       closeCompleted: document.getElementById("closeCompleted"),
       completedSummary: document.getElementById("completedSummary"),
       completedList: document.getElementById("completedList"),
@@ -3536,6 +3594,7 @@
       renderWorkbenchShopping();
       renderWorkbenchDaily();
       renderWorkbenchCounters();
+      if (isCheckinOpen()) renderCheckin();
       focusEditingInput();
       updateInteractionState();
     }
@@ -3764,8 +3823,8 @@
         actions.className = "daily-actions";
         const count = createDailyActionButton({
           className: "daily-count-button",
-          title: "补打卡",
-          label: `补打卡：${stripDailyTaskPrefix(task.text)}，${formatDailyTaskStats(task).trim()}`,
+          title: "打开所有每日任务的补打卡",
+          label: `补打卡：${stripDailyTaskPrefix(task.text)}，${formatDailyTaskStats(task).trim()}，查看所有每日任务`,
           icon: formatDailyTaskStats(task),
           onClick: () => openCheckin(task),
         });
@@ -4916,6 +4975,19 @@
         openModal();
         return;
       }
+      if (event.key === "Tab" && checkinOpen) {
+        const buttons = Array.from(els.checkinBackdrop.querySelectorAll("button:not(:disabled)"));
+        const first = buttons[0];
+        const last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+        return;
+      }
       if (event.key === "Escape" && checkinOpen) {
         event.preventDefault();
         closeCheckin();
@@ -5286,8 +5358,10 @@
       renderCheckin();
       els.checkinBackdrop.classList.add("open");
       window.setTimeout(() => {
-        const todayButton = els.checkinGrid.querySelector(".checkin-day.today") || els.checkinGrid.querySelector(".checkin-day");
-        if (todayButton) todayButton.focus();
+        if (!isCheckinOpen()) return;
+        const taskSection = Array.from(els.checkinTasks.children).find((section) => section.dataset.taskId === task.id);
+        const todayButton = taskSection?.querySelector(".checkin-day.today") || els.checkinTasks.querySelector(".checkin-day");
+        (todayButton || els.closeCheckin).focus();
       }, 0);
     }
 
@@ -5302,46 +5376,92 @@
     }
 
     function renderCheckin() {
-      const task = currentCheckinTask();
-      els.checkinGrid.innerHTML = "";
-      if (!task) return;
-
-      const { startDate, checkins } = getDailyTaskStats(task);
-      els.checkinTitle.textContent = stripDailyTaskPrefix(task.text);
-      els.checkinSummary.textContent = `本月打卡：${formatDailyTaskStats(task)}，可补打卡范围：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`;
-
-      for (const name of CALENDAR_WEEKDAYS) {
-        const weekday = document.createElement("div");
-        weekday.className = "checkin-weekday";
-        weekday.textContent = name;
-        els.checkinGrid.appendChild(weekday);
+      const tasks = [...state.dailyTasks].sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
+      const activeButton = els.checkinTasks.contains(document.activeElement) ? document.activeElement : null;
+      const focusTaskId = activeButton?.dataset.taskId;
+      const focusDate = activeButton?.dataset.date;
+      const body = els.checkinTasks.parentElement;
+      const scrollTop = body.scrollTop;
+      els.checkinTasks.innerHTML = "";
+      els.checkinTitle.textContent = "每日任务补打卡";
+      const completedToday = tasks.filter((task) => getDailyTaskStats(task).checkins.includes(state.today)).length;
+      els.checkinSummary.textContent = `今日完成 ${completedToday}/${tasks.length} · 点击日期补打卡，再次点击可取消。`;
+      if (!tasks.length) {
+        const empty = document.createElement("div");
+        empty.className = "daily-empty";
+        empty.textContent = "暂无每日任务";
+        els.checkinTasks.appendChild(empty);
       }
 
-      const leading = (parseDate(startDate).getDay() + 6) % 7;
-      for (let index = 0; index < leading; index += 1) {
-        const spacer = document.createElement("div");
-        spacer.className = "checkin-spacer";
-        els.checkinGrid.appendChild(spacer);
+      for (const [index, task] of tasks.entries()) {
+        const { startDate, checkins } = getDailyTaskStats(task);
+        const taskName = stripDailyTaskPrefix(task.text);
+        const section = document.createElement("section");
+        section.className = "checkin-task";
+        section.dataset.taskId = task.id;
+        section.setAttribute("aria-labelledby", `checkin-task-title-${index}`);
+        const head = document.createElement("div");
+        const title = document.createElement("h3");
+        title.className = "checkin-task-title";
+        title.id = `checkin-task-title-${index}`;
+        title.textContent = taskName;
+        const stats = document.createElement("div");
+        stats.className = "checkin-task-stats";
+        stats.textContent = `本月打卡：${formatDailyTaskStats(task)}`;
+        const range = document.createElement("div");
+        range.className = "checkin-task-range";
+        range.textContent = startDate <= state.today
+          ? `可补打卡：${formatShortDate(startDate)} 至 ${formatShortDate(state.today)}`
+          : "任务尚未开始，暂无可打卡日期";
+        head.append(title, stats, range);
+        const grid = document.createElement("div");
+        grid.className = "checkin-grid";
+        section.append(head, grid);
+        els.checkinTasks.appendChild(section);
+        if (startDate > state.today) continue;
+
+        for (const name of CALENDAR_WEEKDAYS) {
+          const weekday = document.createElement("div");
+          weekday.className = "checkin-weekday";
+          weekday.textContent = name;
+          grid.appendChild(weekday);
+        }
+
+        const leading = (parseDate(startDate).getDay() + 6) % 7;
+        for (let index = 0; index < leading; index += 1) {
+          const spacer = document.createElement("div");
+          spacer.className = "checkin-spacer";
+          grid.appendChild(spacer);
+        }
+
+        const checkedDates = new Set(checkins);
+        for (let date = startDate; date <= state.today; date = addDays(date, 1)) {
+          const parsedDate = parseDate(date);
+          const button = document.createElement("button");
+          const checked = checkedDates.has(date);
+          button.className = "checkin-day";
+          if (checked) button.classList.add("checked");
+          if (date === state.today) button.classList.add("today");
+          button.type = "button";
+          button.disabled = state.readOnly;
+          button.dataset.taskId = task.id;
+          button.dataset.date = date;
+          button.setAttribute("aria-pressed", String(checked));
+          button.setAttribute("aria-label", `${taskName}，${formatShortDate(date)} ${checked ? "已打卡，点击取消" : "未打卡，点击补打卡"}`);
+          button.innerHTML = `
+            <span class="checkin-date">${parsedDate.getDate()}</span>
+            <span class="checkin-mark">${checked ? "✓" : ""}</span>
+          `;
+          button.addEventListener("click", () => toggleDailyCheckin(task, date, !checked));
+          grid.appendChild(button);
+        }
       }
 
-      const checkedDates = new Set(checkins);
-      for (let date = startDate; date <= state.today; date = addDays(date, 1)) {
-        const parsedDate = parseDate(date);
-        const button = document.createElement("button");
-        const checked = checkedDates.has(date);
-        button.className = "checkin-day";
-        if (checked) button.classList.add("checked");
-        if (date === state.today) button.classList.add("today");
-        button.type = "button";
-        button.dataset.date = date;
-        button.setAttribute("aria-pressed", checked ? "true" : "false");
-        button.setAttribute("aria-label", `${formatShortDate(date)} ${checked ? "已打卡" : "未打卡"}`);
-        button.innerHTML = `
-          <span class="checkin-date">${parsedDate.getDate()}</span>
-          <span class="checkin-mark">${checked ? "✓" : ""}</span>
-        `;
-        button.addEventListener("click", () => toggleDailyCheckin(task, date, !checked));
-        els.checkinGrid.appendChild(button);
+      body.scrollTop = scrollTop;
+      if (focusTaskId && focusDate) {
+        const button = Array.from(els.checkinTasks.querySelectorAll(".checkin-day"))
+          .find((button) => button.dataset.taskId === focusTaskId && button.dataset.date === focusDate);
+        (button && !button.disabled ? button : els.closeCheckin).focus({ preventScroll: true });
       }
     }
 
@@ -5374,10 +5494,6 @@
 
     function isCompletedOpen() {
       return els.completedBackdrop.classList.contains("open");
-    }
-
-    function currentCheckinTask() {
-      return state.dailyTasks.find((task) => task.id === state.checkinTaskId) || null;
     }
 
     function startEditingTodo(todo) {

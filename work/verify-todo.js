@@ -467,13 +467,13 @@ const server = http.createServer((req, res) => {
   const initialDailyStats = await page.locator(".daily-count-button").first().innerText();
   await page.locator(".daily-count-button").first().click();
   await page.waitForSelector("#checkinBackdrop.open", { timeout: 5000 });
-  await page.locator(`.checkin-day[data-date="${TODAY}"]`).click();
+  await page.locator(`.checkin-task[data-task-id="d1"] .checkin-day[data-date="${TODAY}"]`).click();
   await page.waitForFunction(() => {
     const button = document.querySelector(".daily-count-button");
     return button && (button.textContent || "").includes("1/1") && (button.textContent || "").includes("100.00%");
   });
   const afterBackfillStats = await page.locator(".daily-count-button").first().innerText();
-  await page.locator(`.checkin-day[data-date="${TODAY}"]`).click();
+  await page.locator(`.checkin-task[data-task-id="d1"] .checkin-day[data-date="${TODAY}"]`).click();
   await page.waitForFunction(() => {
     const button = document.querySelector(".daily-count-button");
     return button && (button.textContent || "").includes("0/1") && (button.textContent || "").includes("0.00%");
