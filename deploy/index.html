@@ -3009,6 +3009,7 @@
       }
     }
   </style>
+<script src="project-shortcuts.js?v=2"></script>
 </head>
 <body>
   <div class="auth-backdrop" id="authBackdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle">
@@ -4952,23 +4953,6 @@
       const counterOpen = isCounterOpen();
       const counterItemOpen = isCounterItemOpen();
       const counterRecordOpen = isCounterRecordOpen();
-      const quickLinks = {
-        "1": "https://todo.choi975.workers.dev/",
-        "2": "https://badminton.choi975.workers.dev/",
-        "3": "https://wenti.choi975.workers.dev/",
-        "4": "https://sien-day.choi975.workers.dev/",
-        "5": "https://choi975.github.io/xizang/",
-      };
-      if (event.ctrlKey && event.altKey && !event.metaKey && !event.shiftKey && /^[12345]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
-        event.preventDefault();
-        window.open(quickLinks[event.key], "_blank", "noopener,noreferrer");
-        return;
-      }
-      if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && /^[12345]$/.test(event.key) && !newModalOpen && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
-        event.preventDefault();
-        window.location.href = quickLinks[event.key];
-        return;
-      }
       if (event.altKey && event.key.toLowerCase() === "n" && !checkinOpen && !completedOpen && !counterOpen && !counterItemOpen && !counterRecordOpen) {
         event.preventDefault();
         if (!canWrite()) return;
