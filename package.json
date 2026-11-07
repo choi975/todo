@@ -1,7 +1,7 @@
 {
   "name": "todo",
   "scripts": {
-    "test": "node work/verify-badminton-integration.js && node work/verify-daily-monthly.js",
+    "test": "node work/verify-badminton-integration.js && node work/verify-daily-monthly.js && node work/verify-quick-actions.js",
     "deploy": "npm test && wrangler deploy",
     "test:ui": "node work/verify-daily-checkin-dialog.js"
   },

@@ -2567,14 +2567,47 @@
       border-right: 1px solid #e6e9e7;
     }
 
-    .prefix-label strong,
+    .project-create-button,
+    .workbench-title-action {
+      appearance: none;
+      min-height: 32px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .project-create-button:not(:disabled):hover,
+    .workbench-title-action:not(:disabled):hover {
+      color: var(--wb-accent);
+    }
+
+    .project-create-button:focus-visible,
+    .workbench-title-action:focus-visible {
+      outline: 2px solid var(--wb-accent);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    .project-create-button:disabled,
+    .workbench-title-action:disabled {
+      cursor: default;
+    }
+
+    .prefix-label .project-create-button,
     .prefix-label span {
       display: block;
     }
 
-    .prefix-label strong {
+    .prefix-label .project-create-button {
+      max-width: 100%;
       font-size: 14px;
+      font-weight: 700;
       text-transform: uppercase;
+      overflow-wrap: anywhere;
     }
 
     .prefix-label span {
@@ -3078,7 +3111,7 @@
           </section>
           <section class="workbench-panel daily-home-panel" aria-labelledby="dailyHomeTitle">
             <header class="workbench-panel-head">
-              <div><h2 id="dailyHomeTitle">每日任务</h2><span id="dailyHomeSummary"></span></div>
+              <div><h2 id="dailyHomeTitle"><button class="workbench-title-action" id="completeDailyToday" type="button" aria-label="一键完成今天全部每日任务" disabled>每日任务</button></h2><span id="dailyHomeSummary"></span></div>
             </header>
             <div class="workbench-scroll daily-home-list" id="workbenchDaily"></div>
           </section>
@@ -3321,6 +3354,7 @@
       shoppingSummary: document.getElementById("shoppingSummary"),
       workbenchDaily: document.getElementById("workbenchDaily"),
       dailyHomeSummary: document.getElementById("dailyHomeSummary"),
+      completeDailyToday: document.getElementById("completeDailyToday"),
       workbenchCounters: document.getElementById("workbenchCounters"),
       counterHomePeriodToggle: document.getElementById("counterHomePeriodToggle"),
       openCounterHome: document.getElementById("openCounterHome"),
@@ -3382,6 +3416,7 @@
     els.todayLabel.textContent = formatFullDate(state.today);
     els.openCompleted.addEventListener("click", openCompleted);
     els.openNew.addEventListener("click", openModal);
+    els.completeDailyToday.addEventListener("click", completeDailyTasksToday);
     els.closeNew.addEventListener("click", closeModal);
     els.modalBackdrop.addEventListener("mousedown", (event) => {
       if (event.target === els.modalBackdrop) closeModal();
@@ -3650,8 +3685,14 @@
 
         const label = document.createElement("div");
         label.className = "prefix-label";
-        const name = document.createElement("strong");
+        const name = document.createElement("button");
+        name.className = "project-create-button";
+        name.type = "button";
         name.textContent = group.label;
+        name.disabled = state.readOnly;
+        name.title = `新建 ${group.label} 项目事项`;
+        name.setAttribute("aria-label", name.title);
+        name.addEventListener("click", () => openModal({ projectName: group.label }));
         label.append(name);
 
         const list = document.createElement("div");
@@ -3740,6 +3781,7 @@
       const tasks = [...state.dailyTasks].sort((left, right) => Number(left.sortOrder) - Number(right.sortOrder));
       const completedToday = tasks.filter((task) => Array.isArray(task.checkins) && task.checkins.includes(state.today)).length;
       els.dailyHomeSummary.textContent = `${completedToday}/${tasks.length}`;
+      updateDailyCompletionAction();
       els.workbenchDaily.innerHTML = "";
       const list = document.createElement("ul");
       list.className = "daily-items";
@@ -5003,6 +5045,8 @@
       }
       if (newModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
       if (isTextEntryTarget(event.target) || state.editingId) return;
+      // Let the new heading buttons receive native Enter/Space activation.
+      if ((event.key === " " || event.key === "Enter") && event.target?.closest?.(".project-create-button, #completeDailyToday")) return;
       const isTabShortcut = event.key === "Tab" && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
       const isPinShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "1" || event.code === "Numpad1");
       const isBottomShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "2" || event.code === "Numpad2");
@@ -5298,15 +5342,23 @@
       enqueueMutation(() => apiPost("/api/daily-tasks/delete", { id: task.id }), { key: `daily-delete:${task.id}` });
     }
 
-    function openModal() {
+    function openModal(options = {}) {
       if (!canWrite()) return;
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
+      const projectName = typeof options.projectName === "string" ? options.projectName.trim() : "";
+      if (projectName) els.newText.value = projectName + "：";
       renderDateOptions();
       els.modalBackdrop.classList.add("open");
       window.setTimeout(() => {
+        if (!isNewModalOpen()) return;
         els.newText.focus();
-        els.newText.select();
+        if (projectName) {
+          const end = els.newText.value.length;
+          els.newText.setSelectionRange(end, end);
+        } else {
+          els.newText.select();
+        }
       }, 0);
     }
 
@@ -5448,7 +5500,35 @@
       }
     }
 
-    async function toggleDailyCheckin(task, date, checked) {
+    function incompleteDailyTasksToday() {
+      return state.dailyTasks.filter((task) => {
+        const stats = getDailyTaskStats(task);
+        return stats.startDate <= state.today && !stats.checkins.includes(state.today);
+      });
+    }
+
+    function updateDailyCompletionAction() {
+      const remaining = incompleteDailyTasksToday().length;
+      els.completeDailyToday.disabled = state.readOnly || remaining === 0;
+      els.completeDailyToday.title = state.readOnly
+        ? "等待同步完成后可一键完成"
+        : remaining > 0
+          ? `一键完成今天全部每日任务（剩余 ${remaining} 项）`
+          : "今天没有待完成的每日任务";
+    }
+
+    function completeDailyTasksToday() {
+      if (!canWrite()) return;
+      const tasks = incompleteDailyTasksToday();
+      if (!tasks.length) return;
+      for (const task of tasks) {
+        void toggleDailyCheckin(task, state.today, true, { render: false });
+      }
+      renderWorkbenchDaily();
+      renderCheckin();
+    }
+
+    async function toggleDailyCheckin(task, date, checked, options = {}) {
       if (!task || !canWrite()) return;
       const stats = getDailyTaskStats(task);
       if (date < stats.startDate || date > state.today) return;
@@ -5462,8 +5542,10 @@
       task.completedCount = task.checkins.length;
       task.totalCount = stats.totalCount;
       task.completionPercent = task.totalCount > 0 ? Number(((task.completedCount / task.totalCount) * 100).toFixed(2)) : 0;
-      renderWorkbenchDaily();
-      renderCheckin();
+      if (options.render !== false) {
+        renderWorkbenchDaily();
+        renderCheckin();
+      }
       enqueueMutation(() => apiPost("/api/daily-tasks/checkin", { id: task.id, date, checked, today: state.today }), { key: `daily-checkin:${task.id}:${date}:${checked}` });
     }
 
@@ -5980,6 +6062,10 @@
       els.openNew.disabled = state.readOnly;
       els.openNew.title = state.readOnly ? "等待同步完成后可新建" : "新建（Alt+N）";
       els.openNew.setAttribute("aria-label", state.readOnly ? "等待同步完成后可新建" : "新建待办事项");
+      els.prefixGroups.querySelectorAll(".project-create-button").forEach((button) => {
+        button.disabled = state.readOnly;
+      });
+      updateDailyCompletionAction();
       if (els.openCounterItem) els.openCounterItem.disabled = state.readOnly;
       if (els.openCounterRecord) els.openCounterRecord.disabled = state.readOnly;
     }
