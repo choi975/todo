@@ -3099,7 +3099,7 @@
       <div class="workbench-center">
         <section class="workbench-panel today-panel" aria-labelledby="workbenchTodayTitle">
           <header class="workbench-panel-head">
-            <div><h2 id="workbenchTodayTitle">今天</h2><span id="todaySummary"></span></div>
+            <div><h2 id="workbenchTodayTitle"><button class="workbench-title-action" id="openTodayNew" type="button" aria-label="新建今日普通任务" disabled>今天</button></h2><span id="todaySummary"></span></div>
           </header>
           <div class="workbench-scroll workbench-list" id="todayTodos"></div>
         </section>
@@ -3122,7 +3122,7 @@
       <aside class="workbench-right" aria-label="购物、每日和累计任务">
         <section class="workbench-panel shopping-panel" aria-labelledby="shoppingTitle">
           <header class="workbench-panel-head">
-            <div><h2 id="shoppingTitle">购物清单</h2><span id="shoppingSummary"></span></div>
+            <div><h2 id="shoppingTitle"><button class="workbench-title-action" id="openShoppingNew" type="button" aria-label="新建购物事项" disabled>购物清单</button></h2><span id="shoppingSummary"></span></div>
           </header>
           <div class="workbench-scroll workbench-list shopping-list" id="shoppingTodos"></div>
         </section>
@@ -3361,6 +3361,8 @@
       openCounterHome: document.getElementById("openCounterHome"),
       openCompleted: document.getElementById("openCompleted"),
       openNew: document.getElementById("openNew"),
+      openTodayNew: document.getElementById("openTodayNew"),
+      openShoppingNew: document.getElementById("openShoppingNew"),
       closeNew: document.getElementById("closeNew"),
       modalBackdrop: document.getElementById("modalBackdrop"),
       checkinBackdrop: document.getElementById("checkinBackdrop"),
@@ -3417,6 +3419,8 @@
     els.todayLabel.textContent = formatFullDate(state.today);
     els.openCompleted.addEventListener("click", openCompleted);
     els.openNew.addEventListener("click", openModal);
+    els.openTodayNew.addEventListener("click", () => openModal({ initialText: "" }));
+    els.openShoppingNew.addEventListener("click", () => openModal({ initialText: "买", dueDate: SHOPPING_GROUP }));
     els.completeDailyToday.addEventListener("click", completeDailyTasksToday);
     els.closeNew.addEventListener("click", closeModal);
     els.modalBackdrop.addEventListener("mousedown", (event) => {
@@ -5047,7 +5051,7 @@
       if (newModalOpen || checkinOpen || completedOpen || counterOpen || counterItemOpen || counterRecordOpen) return;
       if (isTextEntryTarget(event.target) || state.editingId) return;
       // Let the new heading buttons receive native Enter/Space activation.
-      if ((event.key === " " || event.key === "Enter") && event.target?.closest?.(".project-create-button, #completeDailyToday")) return;
+      if ((event.key === " " || event.key === "Enter") && event.target?.closest?.(".project-create-button, .workbench-title-action")) return;
       const isTabShortcut = event.key === "Tab" && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
       const isPinShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "1" || event.code === "Numpad1");
       const isBottomShortcut = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && (event.key === "2" || event.code === "Numpad2");
@@ -5348,13 +5352,17 @@
       if (isCompletedOpen()) closeCompleted({ returnFocus: false });
       if (isCounterOpen()) closeCounter({ returnFocus: false });
       const projectName = typeof options.projectName === "string" ? options.projectName.trim() : "";
-      if (projectName) els.newText.value = projectName + "：";
+      const initialText = typeof options.initialText === "string"
+        ? options.initialText
+        : projectName ? projectName + "：" : null;
+      if (initialText !== null) els.newText.value = initialText;
       renderDateOptions();
+      if (options.dueDate === SHOPPING_GROUP) els.dateSelect.value = SHOPPING_GROUP;
       els.modalBackdrop.classList.add("open");
       window.setTimeout(() => {
         if (!isNewModalOpen()) return;
         els.newText.focus();
-        if (projectName) {
+        if (initialText !== null) {
           const end = els.newText.value.length;
           els.newText.setSelectionRange(end, end);
         } else {
@@ -6063,6 +6071,10 @@
       els.openNew.disabled = state.readOnly;
       els.openNew.title = state.readOnly ? "等待同步完成后可新建" : "新建（Alt+N）";
       els.openNew.setAttribute("aria-label", state.readOnly ? "等待同步完成后可新建" : "新建待办事项");
+      els.openTodayNew.disabled = state.readOnly;
+      els.openTodayNew.title = state.readOnly ? "等待同步完成后可新建" : "新建今日普通任务";
+      els.openShoppingNew.disabled = state.readOnly;
+      els.openShoppingNew.title = state.readOnly ? "等待同步完成后可新建" : "新建购物事项（自动填写“买”）";
       els.prefixGroups.querySelectorAll(".project-create-button").forEach((button) => {
         button.disabled = state.readOnly;
       });

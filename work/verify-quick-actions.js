@@ -42,14 +42,15 @@ class Element {
   select() { this.selection = [0, this.value.length]; }
   setSelectionRange(start, end) { this.selection = [start, end]; }
   closest(selector) {
-    return selector === ".project-create-button, #completeDailyToday" && this.quickAction ? this : null;
+    return selector === ".project-create-button, .workbench-title-action" && this.quickAction ? this : null;
   }
 }
 
 function harness(file) {
   const html = fs.readFileSync(path.join(root, file), "utf8");
-  const elements = Object.fromEntries(["prefixGroups", "prefixSummary", "completeDailyToday", "modalBackdrop", "newText", "dateSelect", "openNew"].map((name) => [name, new Element()]));
-  elements.completeDailyToday.quickAction = true;
+  const elements = Object.fromEntries(["prefixGroups", "prefixSummary", "completeDailyToday", "modalBackdrop", "newText", "dateSelect", "openNew", "openTodayNew", "openShoppingNew"].map((name) => [name, new Element()]));
+  for (const name of ["completeDailyToday", "openTodayNew", "openShoppingNew"]) elements[name].quickAction = true;
+  let localCounter = 0;
   const calls = [];
   const queue = [];
   const timers = [];
@@ -57,12 +58,16 @@ function harness(file) {
   const state = {
     today, dailyTasks: [], todos: [], selected: { type: "todo", id: "regular" },
     readOnly: false, editingId: null,
+    localTodoByTempId: new Map(), localTodoRealByTempId: new Map(),
   };
   const context = vm.createContext({
     state, els: elements, SHOPPING_GROUP: "__shopping__",
     document: { createElement: (tag) => new Element(tag), activeElement: null },
     window: { setTimeout: (callback) => timers.push(callback) },
     sortTodos: (a, b) => Number(a.sortOrder) - Number(b.sortOrder),
+    localId: () => `local-heading-${++localCounter}`,
+    todoSelection: (id) => ({ type: "todo", id }),
+    render: () => {}, setStatus: () => {},
     renderTodo: (todo, options) => ({ todo, options }),
     appendWorkbenchEmpty: (element, text) => { element.emptyText = text; },
     renderDateOptions: () => { elements.dateSelect.value = state.today; },
@@ -75,13 +80,19 @@ function harness(file) {
     enqueueMutation: (run, options) => { queue.push({ run, ...options }); return true; },
     apiPost: (url, body) => { calls.push({ url, body: plain(body) }); return { ok: true }; },
   });
-  for (const name of ["canWrite", "prefixInfo", "prefixGroupsForWorkbench", "renderWorkbenchPrefixes", "openModal", "closeModal", "isNewModalOpen", "parseDate", "daysBetween", "getDailyTaskStats", "normalizeTodoText", "parseAutomaticNewItem", "incompleteDailyTasksToday", "updateDailyCompletionAction", "completeDailyTasksToday", "toggleDailyCheckin", "handleKeys", "updateInteractionState"]) {
+  for (const name of ["canWrite", "prefixInfo", "prefixGroupsForWorkbench", "renderWorkbenchPrefixes", "openModal", "closeModal", "submitNewItem", "createLocalTodo", "isNewModalOpen", "parseDate", "daysBetween", "getDailyTaskStats", "normalizeTodoText", "parseAutomaticNewItem", "incompleteDailyTasksToday", "updateDailyCompletionAction", "completeDailyTasksToday", "toggleDailyCheckin", "handleKeys", "updateInteractionState"]) {
     const match = html.match(new RegExp(`    (?:async )?function ${name}\\([^]*?^    }`, "m"));
     assert.ok(match, `${file}: ${name} exists`);
     vm.runInContext(match[0], context);
   }
   check(/<h2 id="dailyHomeTitle"><button[^>]*id="completeDailyToday"[^>]*type="button"[^>]*disabled>每日任务<\/button><\/h2>/.test(html), true, `${file}: heading remains semantic and initially disabled`);
   check(html.includes('els.completeDailyToday.addEventListener("click", completeDailyTasksToday);'), true, `${file}: daily heading click is wired`);
+  for (const [headingId, buttonId, label] of [["workbenchTodayTitle", "openTodayNew", "今天"], ["shoppingTitle", "openShoppingNew", "购物清单"]]) {
+    check(new RegExp(`<h2 id="${headingId}"><button[^>]*class="workbench-title-action"[^>]*id="${buttonId}"[^>]*type="button"[^>]*aria-label="[^\"]+"[^>]*disabled>${label}<\/button><\/h2>`).test(html), true, `${file}: ${label} is a semantic, initially disabled heading button`);
+    const wiring = html.split("\n").find((line) => line.startsWith(`    els.${buttonId}.addEventListener("click",`));
+    assert.ok(wiring, `${file}: ${label} click handler is wired`);
+    vm.runInContext(wiring, context);
+  }
   return { file, html, context, state, elements, calls, queue, renders, runTimers: () => { while (timers.length) timers.shift()(); } };
 }
 
@@ -109,10 +120,94 @@ function database() {
   return { sqlite, db, worker };
 }
 
+async function verifyCreationHeadings(h) {
+  const { file, context, state, elements, queue, calls } = h;
+  const { sqlite, db, worker } = database();
+  const originalApiPost = context.apiPost;
+  context.apiPost = async (url, body) => {
+    calls.push({ url, body: plain(body) });
+    assert.equal(url, "/api/todos");
+    return worker.createTodo(db, body.text, body.dueDate, body.today);
+  };
+  try {
+    context.updateInteractionState();
+    check([elements.openTodayNew.disabled, elements.openShoppingNew.disabled], [false, false], `${file}: both headings work even when their lists are empty`);
+    elements.newText.value = "COUNT：旧项目草稿";
+    elements.dateSelect.value = "daily";
+    elements.openTodayNew.listeners.click();
+    h.runTimers();
+    check([elements.newText.value, elements.newText.selection, elements.newText.focused, elements.dateSelect.value], ["", [0, 0], true, today], `${file}: Today opens a blank ordinary task for today's date`);
+    check(elements.modalBackdrop.classList.contains("open"), true, `${file}: Today opens the creation dialog`);
+    elements.newText.value = "安装除湿机";
+    let prevented = false;
+    await context.submitNewItem({ preventDefault() { prevented = true; } });
+    check([prevented, queue.length, state.todos.at(-1).text, state.todos.at(-1).dueDate], [true, 1, "安装除湿机", today], `${file}: Today submits an ordinary task via the existing creation path`);
+    await queue.shift().run();
+    check(sqlite.prepare("SELECT text, due_date AS dueDate FROM todos WHERE text = '安装除湿机'").get(), { text: "安装除湿机", dueDate: today }, `${file}: ordinary creation persists with today's date`);
+
+    elements.newText.value = "TODO：旧项目草稿";
+    elements.dateSelect.value = "counter";
+    elements.openShoppingNew.listeners.click();
+    h.runTimers();
+    check([elements.newText.value, elements.newText.selection, elements.newText.focused, elements.dateSelect.value], ["买", [1, 1], true, "__shopping__"], `${file}: Shopping pre-fills exactly 买 with caret at end and selects the shopping list`);
+    check(elements.modalBackdrop.classList.contains("open"), true, `${file}: Shopping opens the creation dialog`);
+    elements.newText.value += "洗发水";
+    await context.submitNewItem({ preventDefault() {} });
+    check([queue.length, state.todos.at(-1).text, state.todos.at(-1).dueDate], [1, "买洗发水", "__shopping__"], `${file}: shopping creation appears in the shopping column immediately`);
+    await queue.shift().run();
+    check(sqlite.prepare("SELECT text, due_date AS dueDate FROM todos WHERE text = '买洗发水'").get(), { text: "买洗发水", dueDate: "__shopping__" }, `${file}: shopping creation persists in the correct group`);
+    check(calls.map(({ body }) => body), [{ text: "安装除湿机", dueDate: today, today }, { text: "买洗发水", dueDate: "__shopping__", today }], `${file}: heading creation posts exact text and targets`);
+
+    elements.openShoppingNew.listeners.click();
+    h.runTimers();
+    elements.newText.value += "未提交的购物草稿";
+    context.closeModal({ returnFocus: false });
+    elements.openTodayNew.listeners.click();
+    h.runTimers();
+    check([elements.newText.value, elements.dateSelect.value], ["", today], `${file}: Today does not inherit shopping text or the shopping target`);
+    context.closeModal({ returnFocus: false });
+    state.today = "2026-11-08";
+    elements.openTodayNew.listeners.click();
+    h.runTimers();
+    check(elements.dateSelect.value, state.today, `${file}: Today uses the current application date rather than a hard-coded date`);
+    context.closeModal({ returnFocus: false });
+    state.today = today;
+
+    state.readOnly = true;
+    context.updateInteractionState();
+    check([elements.openTodayNew.disabled, elements.openShoppingNew.disabled], [true, true], `${file}: loading/read-only mode disables both new headings`);
+    elements.newText.value = "保留只读草稿";
+    for (const id of ["openTodayNew", "openShoppingNew"]) {
+      elements[id].listeners.click();
+      h.runTimers();
+      check([elements.newText.value, elements.modalBackdrop.classList.contains("open"), queue.length], ["保留只读草稿", false, 0], `${file}: ${id} is also guarded against programmatic read-only clicks`);
+    }
+    state.readOnly = false;
+    context.updateInteractionState();
+    check([elements.openTodayNew.disabled, elements.openShoppingNew.disabled], [false, false], `${file}: headings re-enable after synchronization`);
+    for (const id of ["openTodayNew", "openShoppingNew"]) {
+      for (const key of [" ", "Enter"]) {
+        let prevented = false;
+        context.handleKeys({ key, target: elements[id], preventDefault() { prevented = true; } });
+        check([prevented, calls.some((call) => call.unwantedSelectedActivation)], [false, false], `${file}: native ${JSON.stringify(key)} on ${id} is not hijacked by completion shortcuts`);
+      }
+    }
+  } finally {
+    context.apiPost = originalApiPost;
+    sqlite.close();
+    state.today = today;
+    state.readOnly = false;
+    state.todos = [];
+    calls.length = 0;
+    queue.length = 0;
+  }
+}
+
 (async () => {
   for (const file of ["deploy/index.html", "deploy/todo.html"]) {
     const h = harness(file);
     const { context, state, elements } = h;
+    await verifyCreationHeadings(h);
     state.todos = ["TODO", "接龙", "COUNT", "较长的项目名称"].map((name, index) => ({ id: `project-${index}`, text: `${name}：现有事项`, dueDate: today, sortOrder: index }));
     context.renderWorkbenchPrefixes();
     check(elements.prefixGroups.children.length, 4, `${file}: every project has an action`);
@@ -209,7 +304,7 @@ function database() {
       check([prevented, h.calls.some((call) => call.unwantedSelectedActivation)], [false, false], `${file}: native ${JSON.stringify(eventKey)} on heading buttons does not complete the selected task`);
     }
   }
-  console.log(`verify: quick actions passed (${checks} checks; both frontend entry points, project prefill/caret, daily batching/idempotence/date/read-only guards, native keyboard behavior, real SQLite persistence)`);
+  console.log(`verify: quick actions passed (${checks} checks; both frontend entry points, project/Today/Shopping prefill and caret, actual ordinary/shopping creation, daily batching/idempotence/date/read-only guards, native keyboard behavior, real SQLite persistence)`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
